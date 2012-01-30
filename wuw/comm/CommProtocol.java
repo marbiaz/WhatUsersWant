@@ -49,14 +49,11 @@ synchronized MsgHandler getMsgHandler(int index) {
 }
 
 
-/**
- * By calling this method whenever a message is received, the payload will be
- * dispatch to the proper handler ( @see wuw.comm.Message).
- * 
- * @param msg
- *          The message to be dispatched to the proper handler.
+/*
+ * (non-Javadoc)
+ * @see wuw.comm.CommHandler#dispatch(wuw.comm.TMessage)
  */
-void dispatch(TMessage msg) {
+public void dispatch(TMessage msg) {
 /**/System.out.println("Message # " + incR() + " dispatched.");
   getMsgHandler(msg.getMid()).handleMsg(msg.getPayload());
   return;

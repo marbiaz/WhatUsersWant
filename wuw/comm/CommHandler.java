@@ -39,4 +39,14 @@ public int addMsgHandler(MsgHandler mh);
  */
 public void send(PeerID dest, int mid, Object msg);
 
+
+/**
+ * By calling this method whenever a message is received, the payload will be
+ * dispatch to the proper handler ( @see wuw.comm.TMessage).
+ *
+ * @param msg
+ *          The message to be dispatched to the proper handler.
+ */
+void dispatch(TMessage msg);
+
 }
