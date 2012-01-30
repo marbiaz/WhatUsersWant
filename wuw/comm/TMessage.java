@@ -98,7 +98,7 @@ public int getMid() {
 /**
  * @param message
  */
-public void setPid(int id) {
+public void setMid(int id) {
   this.mid = id;
 }
 
