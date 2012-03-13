@@ -54,6 +54,12 @@ public PeerID(String host, int port) {
 }
 
 
+protected PeerID(InetAddress i, int p) {
+  this.ip = i;
+  this.port = p;
+}
+
+
 /**
  * @return the peer IP
  */
