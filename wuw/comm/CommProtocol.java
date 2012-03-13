@@ -21,6 +21,7 @@ abstract class CommProtocol implements CommHandler {
 /** Local PeerID. */
 protected final PeerID pid;
 private ArrayList<MsgHandler> msgHandler;
+boolean zipData;
 
 private static int sMsgCounter;
 private static int rMsgCounter;
@@ -28,6 +29,7 @@ private static int rMsgCounter;
 
 CommProtocol(PeerID p) {
   pid = p;
+  zipData = true;
   msgHandler = new ArrayList<MsgHandler>();
 }
 

@@ -4,12 +4,15 @@ package wuw.comm;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import wuw.core.PeerID;
 
@@ -53,11 +56,14 @@ private void receiverThread() {
 
     while (true) {
       try {
-        // receive UDP datagram.
         recSocket.receive(dgm);
-        // deserialize packet data into a Message object.
-        ObjectInputStream inStream = new ObjectInputStream(new ByteArrayInputStream(dgm.getData()));
         TMessage msg = new TMessage();
+        ObjectInput inStream = null;
+        if (zipData) {
+          inStream = new ObjectInputStream(new GZIPInputStream(new ByteArrayInputStream(dgm.getData())));
+        } else {
+          inStream = new ObjectInputStream(new ByteArrayInputStream(dgm.getData()));
+        }
         msg.readExternal(inStream);
 
 /**/   // if (verbosity>3)
@@ -106,11 +112,16 @@ public PeerID getLocalPeerID() {
  */
 public void send(PeerID dest, int mid, Object msg) {
   try {
-    // TODO: Decide something about msg ID...
     TMessage tMessage = new TMessage(pid, mid, msg);
     ByteArrayOutputStream byteOs = new ByteArrayOutputStream();
-    ObjectOutput uMsg = new ObjectOutputStream(byteOs);
-    tMessage.writeExternal(uMsg);
+    if (zipData) {
+      GZIPOutputStream uMsg = new GZIPOutputStream(byteOs);
+      tMessage.writeExternal(new ObjectOutputStream(uMsg));
+      uMsg.finish();
+    } else {
+      ObjectOutput uMsg = new ObjectOutputStream(byteOs);
+      tMessage.writeExternal(uMsg);
+    }
     byte[] bytes = byteOs.toByteArray();
 
     // create a UDP datagram with the serialized message.

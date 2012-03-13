@@ -1,12 +1,15 @@
 package wuw.comm;
 
 import java.io.IOException;
+import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import wuw.core.PeerID;
 
@@ -77,10 +80,13 @@ private void acceptConnectionsThread() {
 private void receiverThread(Socket s) {
 
   try {
-    // connects the socket input to deserializer stream.
-    ObjectInputStream inStream = new ObjectInputStream(s.getInputStream());
-    // receive and deserialize packet data into a TransportMessage object.
     TMessage msg = new TMessage();
+    ObjectInput inStream = null;
+    if (zipData) {
+      inStream = new ObjectInputStream(new GZIPInputStream(s.getInputStream()));
+    } else {
+      inStream = new ObjectInputStream(s.getInputStream());
+    }
     msg.readExternal(inStream);
 
 /**/// if (verbosity>3) {
@@ -122,8 +128,16 @@ public void send(PeerID dest, int mid, Object msg) {
     s.connect(new InetSocketAddress(dest.getIP(), dest.getPort()), 5000);
 
     // write the serialized packet on the socket output stream.
-    ObjectOutput oos = new ObjectOutputStream(s.getOutputStream());
-    tMsg.writeExternal(oos);
+    if (zipData) {
+      GZIPOutputStream gzOut = new GZIPOutputStream(s.getOutputStream());
+      ObjectOutput oos = new ObjectOutputStream(gzOut);
+      tMsg.writeExternal(oos);
+      gzOut.finish();
+    } else {
+      ObjectOutput oos = new ObjectOutputStream(s.getOutputStream());
+      tMsg.writeExternal(oos);
+    }
+
 
 /**/// if (verbosity>3) {
     // System.out.println("    TCP: sending message # " + incS() + " from "
