@@ -20,7 +20,7 @@ public interface CommHandler {
  * given any incoming message of the returned type.
  *
  * @param mh
- *          The pointer to the receiver method that can handle this message
+ *          The pointer to the receiver object that can handle this message
  * @return The message ID that makes it possible to match messages and handlers.
  */
 public int addMsgHandler(MsgHandler mh);
