@@ -46,8 +46,12 @@ synchronized int incR() {
 }
 
 
-synchronized MsgHandler getMsgHandler(int index) {
-  return msgHandler.get(index);
+MsgHandler getMsgHandler(int index) {
+  MsgHandler mh;
+  synchronized (msgHandler) {
+    mh = msgHandler.get(index);
+  }
+  return mh;
 }
 
 
@@ -66,9 +70,13 @@ public void dispatch(TMessage msg) {
  * (non-Javadoc)
  * @see wuw.comm.CommHandler#addMsgHandler(wuw.core.MsgHandler)
  */
-synchronized public int addMsgHandler(MsgHandler mh) {
-  msgHandler.add(mh);
-  return msgHandler.size() - 1;
+public int addMsgHandler(MsgHandler mh) {
+  int i;
+  synchronized (msgHandler) {
+    msgHandler.add(mh);
+    i = msgHandler.size() - 1;
+  }
+  return i;
 }
 
 
