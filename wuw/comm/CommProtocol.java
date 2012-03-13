@@ -61,7 +61,12 @@ MsgHandler getMsgHandler(int index) {
  */
 public void dispatch(TMessage msg) {
 /**/System.out.println("Message # " + incR() + " dispatched.");
-  getMsgHandler(msg.getMid()).handleMsg(msg.getPayload());
+  if (msg.getMid() < msgHandler.size()) {
+    getMsgHandler(msg.getMid()).handleMsg(msg.getPayload());
+  } else {
+    /**/System.err.println("Comm : received a message for an inexistant handler (#"
+      + msg.getMid() + ")");
+  }
   return;
 }
 
