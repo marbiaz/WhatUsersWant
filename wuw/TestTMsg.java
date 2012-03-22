@@ -9,7 +9,6 @@ import java.io.ObjectOutput;
 
 import wuw.core.Config;
 import wuw.core.MsgHandler;
-import wuw.core.Peer;
 import wuw.core.PeerID;
 
 
@@ -23,7 +22,7 @@ static int msgId;
 
 
 public TestTMsg() {
-  id = new PeerID();
+  id = null;
 }
 
 
@@ -85,19 +84,21 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
 
 /**
  * A very basic test for the transport protocols.
+ * To be called after local peer initialization (see {@link Config#set(String[])}).
  * 
  * @param peerList
  *          An array of PeerIDs of the remote peers to communicate with.
  */
-static void transportTest(final Peer p, PeerID[] peerList) {
+static void transportTest(String peerListFile) {
 
+  PeerID[] peerList = Config.readPeerList(peerListFile, true);
   if (peerList == null) {
     System.exit(2);
   }
 
   java.util.Random rand = new java.util.Random(System.currentTimeMillis());
   TestTMsg msg = new TestTMsg("Have a nice day!\n", Config.getLocalPeer().getPeerID());
-  msgId = p.getTransport().addMsgHandler(msg);
+  msgId = Config.getLocalPeer().getTransport().addMsgHandler(msg);
   try {
     for (int i = 0; i < 20; i++) {
       Config.getLocalPeer().getTransport().send(peerList[rand.nextInt(peerList.length)], msgId, msg);
