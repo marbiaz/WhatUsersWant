@@ -32,7 +32,6 @@ public class UDPProtocol extends CommProtocol {
  */
 public UDPProtocol(PeerID p) {
   super(p);
-  // starts the receiver thread.
   Thread recThread = new Thread(new Runnable() {
 
     public void run() {
@@ -47,10 +46,7 @@ public UDPProtocol(PeerID p) {
 private void receiverThread() {
 
   try {
-    // open a UDP socket to receive msgs.
     DatagramSocket recSocket = new DatagramSocket(pid.getPort());
-
-    // create a new datagram packet for incoming data.
     byte[] buf = new byte[recSocket.getReceiveBufferSize()];
     DatagramPacket dgm = new DatagramPacket(buf, buf.length);
 
@@ -66,31 +62,26 @@ private void receiverThread() {
         }
         msg.readExternal(inStream);
 
-/**/   // if (verbosity>3)
-        // System.out.println("    UDP : Receiving message from " +
+/**/    // System.out.println("    UDP : Receiving message from " +
         // msg.getSource().getIP().getHostAddress() + ":" +
         // msg.getSource().getPort() +
         // " to " + pid.getIP().getHostAddress() + ":" + pid.getPort() + ".");
 
-        // notifies the correct protocol of message reception.
+        // deliver the payload to the correct handler.
         if (pid.equals(msg.getSource()))
           System.err.println("UDP : ERROR : sender == receiver");
         else
           dispatch(msg);
       }
       catch (Exception e) {
-/**/   // if (verbosity>3) {
         System.err.println("UDP Receive Exception: " + e.getMessage());
         e.printStackTrace(System.err);
-        // }
       }
     }
   }
   catch (SocketException e) {
-/**/// if (verbosity>3) {
     System.err.println("UDP Socket Exception: " + e.getMessage());
     e.printStackTrace(System.err);
-    // }
   }
 }
 
@@ -124,25 +115,18 @@ public void send(PeerID dest, int mid, Object msg) {
     }
     byte[] bytes = byteOs.toByteArray();
 
-    // create a UDP datagram with the serialized message.
     DatagramPacket dgm = new DatagramPacket(bytes, bytes.length, dest.getIP(), dest.getPort());
-    // create UDP socket.
     DatagramSocket s = new DatagramSocket();
-    // send the message to the remote peer.
     s.send(dgm);
 
-/**/// if (verbosity>3) {
-    // System.out.println("    UDP : sending message # " + incS() + " from "
+/**/// System.out.println("    UDP : sending message # " + incS() + " from "
     // + pid.getIP().getHostAddress() + ":" + pid.getPort() + " to "
     // + dest.getIP().getHostAddress() + ":" + dest.getPort() + ".");
-    // }
     s.close();
   }
   catch (Exception e) {
-/**/// if (CommonState.verbosity>3) {
-    System.err.println("UDP Send Exception: " + e.getMessage());
+/**/System.err.println("UDP Send Exception: " + e.getMessage());
     e.printStackTrace();
-    // }
   }
 }
 

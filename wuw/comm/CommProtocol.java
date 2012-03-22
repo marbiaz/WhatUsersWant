@@ -57,6 +57,7 @@ MsgHandler getMsgHandler(int index) {
 
 /*
  * (non-Javadoc)
+ * 
  * @see wuw.comm.CommHandler#dispatch(wuw.comm.TMessage)
  */
 public void dispatch(TMessage msg) {
@@ -73,6 +74,7 @@ public void dispatch(TMessage msg) {
 
 /*
  * (non-Javadoc)
+ * 
  * @see wuw.comm.CommHandler#addMsgHandler(wuw.core.MsgHandler)
  */
 public int addMsgHandler(MsgHandler mh) {
@@ -87,6 +89,7 @@ public int addMsgHandler(MsgHandler mh) {
 
 /*
  * (non-Javadoc)
+ * 
  * @see wuw.comm.CommHandler#send(wuw.core.PeerID, int, java.lang.Object)
  */
 abstract public void send(PeerID dest, int mid, Object msg);
