@@ -11,7 +11,7 @@ import java.util.Enumeration;
  * @author Marco Biazzini
  * @date 2012 Jan 19
  */
-public class PeerID implements Externalizable {
+public class PeerID implements Externalizable, Comparable<PeerID> {
 
 /** IP address of the peer */
 InetAddress ip;
@@ -134,6 +134,11 @@ public boolean equals(Object o) {
   PeerID id = (PeerID)o;
 
   return getPort() == id.getPort() && getIP().equals(id.getIP());
+}
+
+
+public int compareTo(PeerID p) {
+  return this.toString().compareTo(p.toString());
 }
 
 
