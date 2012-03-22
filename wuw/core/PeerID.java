@@ -1,8 +1,9 @@
+
+
 package wuw.core;
 
 import java.io.*;
 import java.net.*;
-import java.util.Enumeration;
 
 
 /**
@@ -24,19 +25,6 @@ int port;
  * Default (empty) constructor
  */
 public PeerID() {};
-
-
-/**
- * Create a new PeerID from the local IP address and the specified port number.
- */
-public PeerID(int p) {
-  this.ip = getCurrentEnvironmentNetworkIp();
-  if (this.ip == null) {
-    System.err.println("Unable to obtain an IP address");
-    System.exit(1);
-  }
-  this.port = p;
-}
 
 
 /**
@@ -73,44 +61,6 @@ public InetAddress getIP() {
  */
 public int getPort() {
   return port;
-}
-
-
-// FIXME: It does not work on many interfaces... It cannot be used safely.
-/**
- * Automatically get the local IP address from the local available network
- * interfaces. The Loopback address is discarded and the private IP is returned
- * only if no public address is available.
- * 
- * @return an InetAddress of the local peer.
- */
-private static InetAddress getCurrentEnvironmentNetworkIp() {
-  Enumeration<NetworkInterface> netInterfaces = null;
-  try {
-    netInterfaces = NetworkInterface.getNetworkInterfaces();
-  }
-  catch (SocketException e) {
-    e.printStackTrace();
-  }
-
-  while (netInterfaces.hasMoreElements()) {
-    NetworkInterface ni = netInterfaces.nextElement();
-    Enumeration<InetAddress> address = ni.getInetAddresses();
-    while (address.hasMoreElements()) {
-      InetAddress addr = address.nextElement();
-      if (!addr.isLoopbackAddress() && !addr.isSiteLocalAddress()
-          && !(addr.getHostAddress().indexOf(":") > -1)) {
-        return addr;
-      }
-    }
-  }
-  try { // only if no public interface is available
-    if (!InetAddress.getLocalHost().isLoopbackAddress()) return InetAddress.getLocalHost();
-  }
-  catch (UnknownHostException e) {
-    e.printStackTrace();
-  }
-  return null;
 }
 
 
@@ -164,13 +114,5 @@ public void writeExternal(ObjectOutput out) throws IOException {
   out.writeInt(port);
   out.flush();
 }
-
-
-// public Object clone() {
-// NodeID res = new NodeID();
-// res.ip = this.ip;
-// res.port = this.port;
-// return res;
-// }
 
 }
