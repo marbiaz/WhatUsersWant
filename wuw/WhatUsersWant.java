@@ -4,6 +4,10 @@ package wuw;
 
 
 import wuw.core.Config;
+import wuw.core.ContentData;
+import wuw.core.ContentData.Category;
+import wuw.core.ContentData.Interest;
+import wuw.core.PeerID;
 
 
 /**
@@ -29,7 +33,21 @@ public static void main(String[] args) {
     System.exit(1);
   }
 
-  TestTMsg.transportTest(Config.getLocalPeer(), Config.getPeerList());
+  // TestTMsg.transportTest(args[args.length - 1]);
+  TestOverlayConnection(args[args.length - 1]);
+
+  long start = System.currentTimeMillis();
+  int duration = 10 * 1000;
+  while ((System.currentTimeMillis() - start) < duration) {
+    try {
+      Thread.sleep(duration);
+    }
+    catch (InterruptedException e) {
+      System.err.println("Main : unexpected interruption while waiting for task completion...");
+      e.printStackTrace();
+      System.err.println("Main : going back to sleep...");
+    }
+  }
 
   System.out.println("WUW execution happily ends here.");
   System.exit(0);
@@ -38,14 +56,13 @@ public static void main(String[] args) {
 
 /**************************** DEBUG UTILITIES ********************************/
 
-static private void arrayPrint(Object[] a) {
-  String res = "";
-  for (int i = 0; i < a.length; i++) {
-    res += " " + a[i].toString();
+static public void TestOverlayConnection(String path) {
+  PeerID[] neighs = Config.readPeerList(path, true);
+  for (int i = 0; i < 20; i++) {
+    ContentData content = new ContentData("Content" + i, 10, Category.MOVIES, Interest.PRIMARY,
+        neighs);
+    Config.getLocalPeer().addContent(content);
   }
-  res += "\n\n";
-  System.out.println(res);
-  return;
 }
 
 }
