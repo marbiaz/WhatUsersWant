@@ -24,6 +24,8 @@ import wuw.core.MsgHandler;
  */
 public class Newscast implements MsgHandler {
 
+private boolean printLogs;
+
 /**
  * The transport layer protocol used by the local peer.
  */
@@ -67,6 +69,7 @@ public Newscast(int[] args) {
   sendReply = maxCacheSize + 1; //args[3];
   cacheLock = new Object();
   mid = -1;
+  printLogs = Config.printLogs;
 
   int i = 0;
 //  if (neighborList != null) {
@@ -172,13 +175,15 @@ public void handleMsg(Object msg) {
       des[i] = cache[newEntries.poll()].getDescriptor();
     }
 
-/**/String log = "NEWSCAST: currently " + cacheSize + " descriptors :\n";
-    for (int i = 0; i < cacheSize; i++) {
-      log += cache[i].getPeerID().toString() + " - ";
+    if (printLogs) {
+/**/ String log = "NEWSCAST: currently " + cacheSize + " descriptors :\n";
+      for (int i = 0; i < cacheSize; i++) {
+        log += cache[i].getPeerID().toString() + " - ";
+      }
+      log += "\n among which there are " + des.length + " new entries";
+      System.err.println(log);
+      System.err.flush();
     }
-    log += "\n among which there are " + des.length + " new entries";
-    System.err.println(log);
-    System.err.flush();
   }
 
   if (des.length > 0) {
@@ -314,12 +319,12 @@ private void send(PeerID[] dest, boolean isReply) {
   }
   if (dest != null) {
     localCache[0] = new NCCacheEntry(localNodeID, Config.getLocalPeer().getDescriptor());
-/**/if (!isReply) System.out.println("NEWSCAST: Timeout Fired, sending cache to " + Config.printArray(dest));
+/**/if (printLogs && !isReply) System.out.println("NEWSCAST: Timeout Fired, sending cache to " + Config.printArray(dest));
     for (PeerID p : dest) {
       send(p, localCache, isReply);
     }
   } else {
-/**/System.out.println("NEWSCAST: Timeout Fired, but no peer is available!");
+/**/if (printLogs) System.out.println("NEWSCAST: Timeout Fired, but no peer is available!");
   }
 
 }
@@ -331,7 +336,7 @@ private LinkedList<Integer> mergeCaches(NCCacheEntry[] reCache) {
   int i = 0, localIndex = 0, recIndex = 0;
   LinkedList<Integer> newEntries = new LinkedList<Integer>();
 
-/**/System.out.println("NEWSCAST: Merging my cache (" + cacheSize
+/**/if (printLogs) System.out.println("NEWSCAST: Merging my cache (" + cacheSize
       + " entries) with the received one (" + recSize + " entries).");
 
   NCCacheEntry[] newCache = new NCCacheEntry[maxCacheSize];

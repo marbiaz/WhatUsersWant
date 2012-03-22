@@ -62,10 +62,10 @@ private void receiverThread() {
         }
         msg.readExternal(inStream);
 
-/**/    // System.out.println("    UDP : Receiving message from " +
-        // msg.getSource().getIP().getHostAddress() + ":" +
-        // msg.getSource().getPort() +
-        // " to " + pid.getIP().getHostAddress() + ":" + pid.getPort() + ".");
+/**/    if (printLogs) System.out.println("    UDP : Receiving message from " +
+            msg.getSource().getIP().getHostAddress() + ":" +
+            msg.getSource().getPort() +
+            " to " + pid.getIP().getHostAddress() + ":" + pid.getPort() + ".");
 
         // deliver the payload to the correct handler.
         if (pid.equals(msg.getSource()))
@@ -119,9 +119,9 @@ public void send(PeerID dest, int mid, Object msg) {
     DatagramSocket s = new DatagramSocket();
     s.send(dgm);
 
-/**/// System.out.println("    UDP : sending message # " + incS() + " from "
-    // + pid.getIP().getHostAddress() + ":" + pid.getPort() + " to "
-    // + dest.getIP().getHostAddress() + ":" + dest.getPort() + ".");
+/**/if (printLogs) System.out.println("    UDP : sending message # " + incS() + " from "
+        + pid.getIP().getHostAddress() + ":" + pid.getPort() + " to "
+        + dest.getIP().getHostAddress() + ":" + dest.getPort() + ".");
     s.close();
   }
   catch (Exception e) {

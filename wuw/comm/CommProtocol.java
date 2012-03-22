@@ -5,6 +5,7 @@ package wuw.comm;
 import java.util.ArrayList;
 
 import wuw.comm.TMessage;
+import wuw.core.Config;
 import wuw.core.MsgHandler;
 import wuw.core.PeerID;
 
@@ -17,6 +18,8 @@ import wuw.core.PeerID;
  * @date 2012 Jan 19
  */
 abstract class CommProtocol implements CommHandler {
+
+boolean printLogs;
 
 /** Local PeerID. */
 protected final PeerID pid;
@@ -31,6 +34,7 @@ CommProtocol(PeerID p) {
   pid = p;
   zipData = true;
   msgHandler = new ArrayList<MsgHandler>();
+  printLogs = Config.printLogs;
 }
 
 
@@ -61,12 +65,12 @@ MsgHandler getMsgHandler(int index) {
  * @see wuw.comm.CommHandler#dispatch(wuw.comm.TMessage)
  */
 public void dispatch(TMessage msg) {
-/**/System.out.println("Message # " + incR() + " dispatched.");
+/**/if (printLogs) System.out.println("Message # " + incR() + " dispatched.");
   if (msg.getMid() < msgHandler.size()) {
     getMsgHandler(msg.getMid()).handleMsg(msg.getPayload());
   } else {
-    /**/System.err.println("Comm : received a message for an inexistant handler (#"
-      + msg.getMid() + ")");
+/**/System.err.println("Comm : received a message for an inexistant handler (#"
+        + msg.getMid() + ")");
   }
   return;
 }
