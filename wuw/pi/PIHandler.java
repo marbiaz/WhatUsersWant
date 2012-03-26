@@ -1,5 +1,7 @@
 package wuw.pi;
 
+import wuw.core.PeerID;
+
 
 /**
  * This interface defines the services provided by WUW's Program Interface
@@ -11,17 +13,19 @@ package wuw.pi;
 public interface PIHandler {
 
 
-// items - remote peers - pending downloads/uploads - finished downloads/uploads
 /**
- * Retrieve information about a content's download/upload status. This is the
- * way WUW gets to know the details about a content (see
- * {@link wuw.core.ContentStatus}).
+ * Retrieve information about contents download/upload status. This is the
+ * way WUW gets to know the details about the status of the content trading activity.
  * 
- * @param ContentID
- *          The unique ID of this content, as known from the message sent to the
- *          topology provider.
- * @return The latest updates about the content trading on the local peer.
+ * @return The latest updates about the content trading on the local peer, or
+ *         <code>null</code> if no update is available.
  */
-Transaction[] getContentUpdates();
+public Transaction[] giveContentUpdates();
+
+
+/**
+ * Get peers from WUW core and make them available to the P2P application, updating its local neighborhood.
+ */
+public void getPeers(PeerID[] peers);
 
 }

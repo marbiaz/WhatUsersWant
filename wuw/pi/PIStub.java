@@ -45,7 +45,7 @@ public PIStub(PeerID[] p) {
  * @see wuw.pi.PIHandler#getContentUpdates(java.lang.String)
  */
 @Override
-public Transaction[] getContentUpdates() {
+public Transaction[] giveContentUpdates() {
   // Apply a variable item range of [0..9] and
   // a randomly chosen Type at each Transaction
   // and assign it to a peer from the local neighborhood.
@@ -62,6 +62,16 @@ public Transaction[] getContentUpdates() {
   }
   // return a random number (between 2 and 20) of transactions
   return Arrays.copyOfRange(trans, Config.rand.nextInt(7), Config.rand.nextInt(11) + 9);
+}
+
+
+/* (non-Javadoc)
+ * @see wuw.pi.PIHandler#getPeers(wuw.core.PeerID[])
+ */
+@Override
+public void getPeers(PeerID[] peers) {
+  // TODO Auto-generated method stub
+  
 }
 
 }
