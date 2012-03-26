@@ -10,7 +10,7 @@ import javax.swing.Timer;
 import wuw.core.Config;
 import wuw.core.PeerID;
 import wuw.comm.CommHandler;
-import wuw.core.MsgHandler;
+import wuw.comm.MsgHandler;
 
 
 /**

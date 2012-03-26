@@ -6,7 +6,6 @@ import java.util.ArrayList;
 
 import wuw.comm.TMessage;
 import wuw.core.Config;
-import wuw.core.MsgHandler;
 import wuw.core.PeerID;
 
 

@@ -1,6 +1,6 @@
 
 
-package wuw.core;
+package wuw.comm;
 
 
 /**

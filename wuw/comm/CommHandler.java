@@ -2,7 +2,6 @@
 
 package wuw.comm;
 
-import wuw.core.MsgHandler;
 import wuw.core.PeerID;
 
 

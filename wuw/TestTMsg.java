@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import wuw.comm.MsgHandler;
 import wuw.core.Config;
-import wuw.core.MsgHandler;
 import wuw.core.PeerID;
 
 
