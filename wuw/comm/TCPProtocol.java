@@ -84,9 +84,7 @@ private void receiverThread(Socket s) {
     msg.readExternal(inStream);
 
 /**/if (printLogs) System.out.println("    TCP : Receiving message from " +
-        msg.getSource().getIP().getHostAddress() + ":" +
-        msg.getSource().getPort() +
-        " to " + pid.getIP().getHostAddress() + ":" + pid.getPort() + ".");
+        msg.getSource().toString() + " to " + pid.toString() + ".");
     s.close();
 
     // forward the received message to the correct level protocol of local node.
@@ -125,8 +123,7 @@ public void send(PeerID dest, int mid, Object msg) {
     }
 
 /**/if (printLogs) System.out.println("    TCP: sending message # " + incS() + " from "
-        + pid.getIP().getHostAddress() + ":" + pid.getPort() + " to "
-        + dest.getIP().getHostAddress() + ":" + dest.getPort() + ".");
+        + pid.toString() + " to " + dest.toString() + ".");
     s.close();
   }
   catch (Exception e) {

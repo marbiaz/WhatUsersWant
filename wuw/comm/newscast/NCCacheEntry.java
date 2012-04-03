@@ -17,20 +17,13 @@ private long ncTimestamp;
 private Object ncDescriptor;
 
 
-public NCCacheEntry() {}
+NCCacheEntry() {}
 
 
 NCCacheEntry(PeerID peer, Object descriptor) {
   ncDescriptor = descriptor;
   this.peer = peer;
   ncTimestamp = 0;
-}
-
-
-NCCacheEntry(PeerID peer) {
-  this.peer = peer;
-  this.ncTimestamp = Long.MAX_VALUE;
-  this.ncDescriptor = null;
 }
 
 

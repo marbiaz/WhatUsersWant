@@ -61,10 +61,10 @@ private int mid;
  * 
  * @param args
  */
-public Newscast(int[] args) {
+public Newscast(int[] args) {// TODO: decent config!
 
   maxCacheSize = 50; //args[0];
-  delta = 1000; //args[1] * 1000;
+  delta = 500; //args[1] * 1000;
   fanOut = 1; //args[2];
   sendReply = maxCacheSize + 1; //args[3];
   cacheLock = new Object();
@@ -100,58 +100,6 @@ void setDelta(int delay) {
 }
 
 
-///**
-// * Add the provided neighbors to the local cache by updating the existent entries, then 
-// * it calls the standard merging procedure to keep the cache ordered.
-// * @param ns The neighbors to add.
-// */
-//public void addPeers(Neighbor[] ns) {
-//  if (localNodeID == null) localNodeID = Config.getLocalPeer().getPeerID(); // should not be needed!
-//  NCCacheEntry[] peers = new NCCacheEntry[ns.length];
-//  long tstamp = System.currentTimeMillis();
-//  for (int i = 0; i < ns.length; i++) {
-//    peers[i] = new NCCacheEntry(tstamp, ns[i]);
-//  }
-//  synchronized (cache) {
-//    mirrorPeers(peers); // first mirror the neighbors, then merge the two arrays, to avoid possible problems
-//    mergeCaches(peers); //       in case of identical newscast timestamp
-//  }
-//}
-
-
-///**
-// * Update a cached peer's descriptor using the data of the argument.
-// * 
-// * @param n
-// *          The neighbor whose data are used to update the respective cache
-// *          entry.
-// * @return <code>true</code> if an entry is found and updated,
-// *         <code>false</code> otherwise.
-// */
-//public boolean updatePeer(Neighbor n) {
-//  int index;
-//  synchronized (cache) {
-//    index = contains(cache, new NCCacheEntry(1, n));
-//    if (index >= 0) {
-//      NCCacheEntry p = cache[index];
-//      Neighbor c = p.getDescriptor();
-//      synchronized (c) {
-//        c.mirror(n); // maybe another method should be used here...
-//      }
-//      p.setTimestamp(System.currentTimeMillis());
-//      System.arraycopy(cache, 0, cache, 1, index);
-//      cache[0] = p;
-//    }
-//  }
-//  if (index < 0) {
-///**/System.err.println("NEWSCAST : ERROR while trying and updating a peer : peer not found!");
-//    System.err.flush();
-//    return false;
-//  }
-//  return true;
-//}
-
-
 /*
  * (non-Javadoc)
  * 
@@ -181,8 +129,8 @@ public void handleMsg(Object msg) {
         log += cache[i].getPeerID().toString() + " - ";
       }
       log += "\n among which there are " + des.length + " new entries";
-      System.err.println(log);
-      System.err.flush();
+      System.out.println(log);
+      System.out.flush();
     }
   }
 
@@ -199,7 +147,7 @@ public void handleMsg(Object msg) {
  * 
  * @param dest The remote peer which the descriptor is to be sent to.
  */
-public void sendCard(PeerID dest) { //FIXME: useless double exchange when both sender and dest are newcomers...
+public void sendCard(Object descriptor, PeerID dest) {
   if (mid < 0) { // TODO: check : this block should be executed once by one thread only!
     localNodeID = Config.getLocalPeer().getPeerID();
     tProt = Config.getLocalPeer().getTransport();
@@ -214,8 +162,9 @@ public void sendCard(PeerID dest) { //FIXME: useless double exchange when both s
     return;
   }
   NCCacheEntry[] localCache = new NCCacheEntry[1];
-  localCache[0] = new NCCacheEntry(localNodeID, Config.getLocalPeer().getDescriptor());
-  send(dest, localCache, false);
+  localCache[0] = new NCCacheEntry(localNodeID, descriptor);
+  send(dest, localCache, false);//XXX:  change to 'true' to avoid a double exchange
+                                //      when both local peer and dest are newcomers
 }
 
 
@@ -229,26 +178,6 @@ private PeerID[] getPeers(int peersNumber) {
   }
   return res;
 }
-
-
-///*
-// * Mirror the descriptors of corresponding cache entries in the argument and in this.cache.
-// * To be called form within a 'synchronized (cache)' block.
-// */
-//private void mirrorPeers(NCCacheEntry[] peers) {
-//  int c = 0, k, done = peers.length < cacheSize ? peers.length : cacheSize;
-//  Neighbor n;
-//  for (int i = 0; i < peers.length && c < done; i++) {
-//    k = contains(cache, peers[i]);
-//    if (k >= 0) {
-//      c++;
-//      n = cache[k].getDescriptor();
-//      synchronized (n) {
-//        n.mirror(peers[i].getDescriptor());
-//      }
-//    }
-//  }
-//}
 
 
 /*
@@ -305,26 +234,31 @@ private void send(PeerID[] dest, boolean isReply) {
     return;
   }
   NCCacheEntry[] localCache;
+  Object descriptor;
   synchronized (cacheLock) {
     localCache = new NCCacheEntry[cacheSize + 1];
     if (cacheSize > 0) {
       for (int i = 0; i < cacheSize; i++) {
         cache[i].incTimestamp();
       }
-      // TODO: for every content in target descriptor
+      // TODO: (possibly harmful to info dissemination): for every content in target descriptor
       // choose from cache only the peers interested in that content. But only
       // once! Not easy... Now the same cache is sent to all the recipients....
       System.arraycopy(cache, 0, localCache, 1, cacheSize);
     }
   }
   if (dest != null) {
-    localCache[0] = new NCCacheEntry(localNodeID, Config.getLocalPeer().getDescriptor());
-/**/if (printLogs && !isReply) System.out.println("NEWSCAST: Timeout Fired, sending cache to " + Config.printArray(dest));
+    descriptor = Config.getLocalPeer().getDescriptor();
+    if (descriptor == null) return; // TODO: better to log that the message is discarded!
+    localCache[0] = new NCCacheEntry(localNodeID, descriptor);
+/**/if (printLogs && !isReply) {
+      System.out.println("NEWSCAST: Timeout Fired, sending cache to " + Config.printArray(dest));
+    }
     for (PeerID p : dest) {
       send(p, localCache, isReply);
     }
-  } else {
-/**/if (printLogs) System.out.println("NEWSCAST: Timeout Fired, but no peer is available!");
+  } else if (printLogs) {
+/**/System.out.println("NEWSCAST: Timeout Fired, but no peer is available!");
   }
 
 }
@@ -336,8 +270,10 @@ private LinkedList<Integer> mergeCaches(NCCacheEntry[] reCache) {
   int i = 0, localIndex = 0, recIndex = 0;
   LinkedList<Integer> newEntries = new LinkedList<Integer>();
 
-/**/if (printLogs) System.out.println("NEWSCAST: Merging my cache (" + cacheSize
-      + " entries) with the received one (" + recSize + " entries).");
+/**/if (printLogs) {
+    System.out.println("NEWSCAST: Merging my cache (" + cacheSize
+        + " entries) with the received one (" + recSize + " entries).");
+  }
 
   NCCacheEntry[] newCache = new NCCacheEntry[maxCacheSize];
 
@@ -357,7 +293,6 @@ private LinkedList<Integer> mergeCaches(NCCacheEntry[] reCache) {
       }
       localIndex++;
     } else {
-      // check to see if current examined node is local one.
       if (!localNodeID.equals(reCache[recIndex].getPeerID())
           && (contains(newCache, reCache[recIndex]) < 0)) {
         newCache[i] = reCache[recIndex];
@@ -368,15 +303,14 @@ private LinkedList<Integer> mergeCaches(NCCacheEntry[] reCache) {
     }
   }
 
-  // if there are empty places in cache, fill with remaining descriptors.
-  // if local cache still has elements, use them.
+  // the local cache has more entries
   for (; (localIndex < cacheSize) && (i < newCache.length); localIndex++) {
     if ((contains(newCache, cache[localIndex]) < 0)) {
       newCache[i] = cache[localIndex];
       i++;
     }
   }
-  // otherwise it's received cache that still has elements, so use them.
+  // the received cache has more entries
   for (; (recIndex < recSize) && (i < newCache.length); recIndex++) {
     if ((!localNodeID.equals(reCache[recIndex].getPeerID()))
         && (contains(newCache, reCache[recIndex]) < 0)) {
@@ -386,9 +320,6 @@ private LinkedList<Integer> mergeCaches(NCCacheEntry[] reCache) {
     }
   }
 
-  // assign new merged cache to local node.
-//  cache = new NCCacheEntry[maxCacheSize];
-//  System.arraycopy(newCache, 0, cache, 0, newCache.length);
   cache = newCache;
   cacheSize = i;
 

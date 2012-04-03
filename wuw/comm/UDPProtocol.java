@@ -63,9 +63,7 @@ private void receiverThread() {
         msg.readExternal(inStream);
 
 /**/    if (printLogs) System.out.println("    UDP : Receiving message from " +
-            msg.getSource().getIP().getHostAddress() + ":" +
-            msg.getSource().getPort() +
-            " to " + pid.getIP().getHostAddress() + ":" + pid.getPort() + ".");
+            msg.getSource().toString() + " to " + pid.getIP().toString() + ".");
 
         // deliver the payload to the correct handler.
         if (pid.equals(msg.getSource()))
@@ -120,8 +118,7 @@ public void send(PeerID dest, int mid, Object msg) {
     s.send(dgm);
 
 /**/if (printLogs) System.out.println("    UDP : sending message # " + incS() + " from "
-        + pid.getIP().getHostAddress() + ":" + pid.getPort() + " to "
-        + dest.getIP().getHostAddress() + ":" + dest.getPort() + ".");
+        + pid.toString() + " to " + dest.toString() + ".");
     s.close();
   }
   catch (Exception e) {
