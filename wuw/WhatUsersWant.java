@@ -23,8 +23,9 @@ public class WhatUsersWant {
  * 
  * @param args
  *          Command line arguments for the execution.
+ * @throws InterruptedException
  */
-public static void main(String[] args) {
+public static void main(String[] args) throws InterruptedException {
 
 
   System.setProperty("java.net.preferIPv4Stack", "true");
@@ -33,11 +34,10 @@ public static void main(String[] args) {
     System.exit(1);
   }
 
+  long start = System.currentTimeMillis();
+  int duration = 20 * 1000;
   // TestTMsg.transportTest(args[args.length - 1]);
   TestOverlayConnection(args[args.length - 1]);
-
-  long start = System.currentTimeMillis();
-  int duration = 10 * 1000;
   while ((System.currentTimeMillis() - start) < duration) {
     try {
       Thread.sleep(duration);
@@ -48,7 +48,11 @@ public static void main(String[] args) {
       System.err.println("Main : going back to sleep...");
     }
   }
-
+/**/// if (Config.printLogs) {
+  System.out.println("My contents :\n" + Config.printArray(Config.getLocalPeer().getContents()));
+  System.out.println("\nCurrent Neighborhood :\n"
+      + Config.printArray(Config.getLocalPeer().getNeighborhood()));
+  // }
   System.out.println("WUW execution happily ends here.");
   System.exit(0);
 }
@@ -56,12 +60,11 @@ public static void main(String[] args) {
 
 /**************************** DEBUG UTILITIES ********************************/
 
-static public void TestOverlayConnection(String path) {
+static public void TestOverlayConnection(String path) throws InterruptedException {
   PeerID[] neighs = Config.readPeerList(path, true);
   for (int i = 0; i < 20; i++) {
-    ContentData content = new ContentData("Content" + i, 10, Category.MOVIES, Interest.PRIMARY,
-        neighs);
-    Config.getLocalPeer().addContent(content);
+    Config.getLocalPeer().addContent("Content" + i, 10, Category.MOVIES, Interest.PRIMARY, neighs);
+    Thread.sleep(10);
   }
 }
 
