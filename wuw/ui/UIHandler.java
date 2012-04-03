@@ -77,7 +77,7 @@ public Object getPrefValue(String contentID, String pref);
  * computation.
  *
  * @param contentID
- *          The ID of the content which the measure refers to
+ *          The ID of the content which the measures refer to
  * @param measures
  *          The names of the measures
  * @param values
@@ -97,6 +97,6 @@ public void initFeedback(String contentID, String[] measures, double[] values);
  * @param value
  *          The value to be set
  */
-public void setFeedback(String contentID, String measures, double value);
+public void setFeedback(String contentID, String measure, double value);
 
 }

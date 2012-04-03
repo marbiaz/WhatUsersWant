@@ -9,7 +9,7 @@ import java.net.Socket;
 
 /**
  * This class attends all the message received and send to WebPage
- *
+ * 
  * @author Adriana Perez-Espinosa
  * @date 2012 Feb 15
  */
@@ -60,15 +60,21 @@ public void Connection() {
           String idContent = obtainIdContent(x);
           if (handler.existContent(idContent) == false) {
             CreateContent(idContent);
-            handler.displayListPreferences(idContent);
+            handler.displayPreferences(idContent);
+            handler.displayContent();
+            sendFeedback(handler.getFeeback(idContent));
           }
         } else if (x.contains("Del#") == true) {
-          handler.removeNodeContent(obtainIdContent(x));
-          handler.DisplayLisContent();
+          handler.removeContent(obtainIdContent(x));
+          handler.displayContent();
+
         } else if (x.contains("Reset#") == true) {
           resetValues(obtainIdContent(x));
 
         } else if (x.contains("exit") == true) {
+          handler.removeAll();
+          handler.displayContent();
+
           iterate = false;
 
         } else {
@@ -98,25 +104,28 @@ public void Connection() {
 
 
 /**
- * This function create a new content in the list.
- *
+ * This function create a new content.
+ * 
  * @param idContent
  *          is the id content
  */
 public void CreateContent(String idContent) {
+  String[] measures = { "Satisfaction", "Adequation", "System Evaluation" };
+  double[] values = { 0, 0, 0 };
   Integer[] val_a = { 100, 500, 700 };
   String[] val_b = { "false", "true" };
   handler.initPref(idContent, new String("Preference1"), 1.0, 3.0, 0.5, 2.0);
   handler.initPref(idContent, new String("Preference2"), (Object[])val_a, (Object)val_a[2]);
   handler.initPref(idContent, new String("Preference3"), 3.0, 5.0, 0.1, 4.9);
   handler.initPref(idContent, new String("Preference4"), (Object[])val_b, true);
+  handler.initFeedback(idContent, measures, values);
 }
 
 
 /**
  * This function is called when the user wants modify the preferences of the
  * content
- *
+ * 
  * @param x
  *          is the id content
  * @return return a String where are include all the names and values by default
@@ -124,7 +133,7 @@ public void CreateContent(String idContent) {
  */
 private String Request(String x) {
   String content = obtainIdContent(x);
-  String Form = "Form#" + handler.getPreferences(content);
+  String Form = "Form" + handler.getPreferences(content);
   return Form;
 
 }
@@ -136,13 +145,13 @@ private String Request(String x) {
  * @return The Id of the Content
  */
 private String obtainIdContent(String message) {
-  String IdContent = "";
+  String[] IdContent = null;
   String content = new String(message);
   int pos = content.indexOf("#");
   if (pos != -1) {
-    IdContent = content.substring(pos + 1, content.length());
+    IdContent = message.split("#");
   }
-  return IdContent;
+  return IdContent[1].toString();
 }
 
 
@@ -151,17 +160,11 @@ private String obtainIdContent(String message) {
  *          message receive for the browser
  */
 private void obtainValues(String message) {
-  String IdContent = "";
-  int numPref = 0;
-  int init = 0;
-  int pos = message.indexOf("#", init);
+  String[] Values = null;
+  int pos = message.indexOf("#", 0);
   if (pos != -1) {
-    IdContent = message.substring(init, pos);
-    init = pos + 1;
-    pos = message.indexOf("#", init);
-    numPref = Integer.parseInt(message.substring(init, pos));
-    init = pos + 1;
-    setValues(IdContent, message.substring(init, message.length()), numPref);
+    Values = message.split("#");
+    setValues(Values);
   }
 }
 
@@ -174,32 +177,39 @@ private void obtainValues(String message) {
  * @param numPref
  *          number of preferences
  */
-private void setValues(String idContent, String message, int numPref) {
-  String Preferences = message;
-  int ini = 0;
-  int pos = -1;
-  int posAux = 0;
-  for (int i = 0; i < numPref; i++) {
-    ini = pos + 1;
-    pos = Preferences.indexOf("&", ini);
-    posAux = Preferences.indexOf("=", ini);
-    handler.setPref(idContent, (String)Preferences.subSequence(ini, posAux),
-        (Object)Preferences.substring(posAux + 1, pos));
+private void setValues(String[] Values) {
+  String Preferences = Values[2].toString();
+  String[] Pref = null;
+  String[] SetValue = null;
+  if (Preferences.indexOf("&", 0) != -1) {
+    Pref = Preferences.split("&");
+    for (int i = 0; i < Integer.parseInt(Values[1]); i++) {
+      SetValue = Pref[i].split("=");
+      handler.setPref(Values[0], SetValue[0], (Object)SetValue[1]);
+    }
+
   }
-  handler.displayListPreferences(idContent);
+  handler.displayPreferences(Values[0]);
 }
 
 
 /**
  * This function sets the value of the preferences to its default value.
- *
+ * 
  * @param idContent
  *          id of the content
  */
 private void resetValues(String idContent) {
   handler.reset(idContent);
-  handler.displayListPreferences(idContent);
+  handler.displayPreferences(idContent);
 
+}
+
+
+public void sendFeedback(String message) {
+  String mess = "FeedBack#" + message;
+  out.println(mess);
+  out.flush();
 }
 
 
@@ -208,6 +218,5 @@ public static void main(String[] args) {
   communication.Connection();
 
 }
-
 
 }
