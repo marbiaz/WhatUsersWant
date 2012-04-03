@@ -1,5 +1,3 @@
-
-
 package wuw.core;
 
 import java.io.BufferedReader;
@@ -85,10 +83,10 @@ static public boolean set(String[] args) {
   CommHandler com = args[2].equalsIgnoreCase("TCP") ? new TCPProtocol(pid) : new UDPProtocol(pid);
   Newscast news = new Newscast(null); // TODO: get parameters to newscast!
   UIHandler ui = new WebUIHandler(); // TODO: write a decent configuration....
-  PIHandler pi = new PIStub(readPeerList(args[args.length - 1], true));
-  // TODO: write a decent pi configuration....
+  PIHandler pi = new PIStub(); // TODO: write a decent pi configuration....
 
   localPeer = new Peer(pid, com, ui, pi, news);
+  pi.getPeers(readPeerList(args[args.length - 1], false)); // FIXME: to avoid crash on testing
 
   return true;
 }
@@ -171,10 +169,13 @@ static private void usage() {
 
 static public String printArray(Object[] a) {
   String res = "";
-  for (int i = 0; i < a.length; i++) {
-    res += a[i].toString() + " ";
+  if (a == null) {
+    res = "\nNULL!\n";
+  } else {
+    for (int i = 0; i < a.length; i++) {
+      res += "[" + i + "] " + a[i].toString() + "\n";
+    }
   }
-  res += "\n";
   return res;
 }
 

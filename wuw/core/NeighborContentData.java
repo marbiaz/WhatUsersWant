@@ -4,6 +4,7 @@ package wuw.core;
 
 import java.util.LinkedList;
 
+import wuw.core.ContentData.Interest;
 import wuw.pi.Transaction;
 
 
@@ -16,27 +17,37 @@ import wuw.pi.Transaction;
 class NeighborContentData {
 
 
-ContentData contentInfo; // for each content, info related to it and this
-                         // neighbor.
-LinkedList<Transaction> downloads; // my incoming transaction with this neighbor
-LinkedList<Transaction> uploads; // my outgoing transactions with this neighbor
-double[] myIntentions; // local peer's pas & pac intentions toward this peer
-                       // FIXME : duplication!
+ContentData contentInfo; // for each content, info related to it and this neighbor.
+LinkedList<Transaction> downloads; // local peer's incoming transactions with this neighbor
+LinkedList<Transaction> uploads; // local peer's outgoing transactions with this neighbor
 
 
-/**
- * @param c
- */
 NeighborContentData(ContentData c) {
-  contentInfo = c;
-  downloads = new LinkedList<Transaction>();
-  uploads = new LinkedList<Transaction>();
-  // myIntentions =
+  contentInfo = new ContentData(c.ID, c.items, c.category, c.interest);
+  downloads = uploads = null;
+}
+
+
+void init() {
+  if (downloads == null) {
+    downloads = new LinkedList<Transaction>();
+    uploads = new LinkedList<Transaction>();
+    contentInfo.interest = Interest.UNKNOWN;
+    contentInfo.intentions = new Intention[1];
+    contentInfo.intentions[0] = new Intention(null);
+  }
 }
 
 
 String getID() {
   return contentInfo.ID;
+}
+
+
+public String toString() {
+  String res = contentInfo.toString() + "\nMy downloads:\n" + Config.printArray(downloads.toArray())
+      + "\nMy uploads:\n" + Config.printArray(uploads.toArray());
+  return res;
 }
 
 }

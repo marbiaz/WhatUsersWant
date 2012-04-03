@@ -2,10 +2,16 @@
 
 package wuw.core;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 
 /**
@@ -14,11 +20,10 @@ import java.io.ObjectOutput;
  * @author Marco Biazzini
  * @date 2012 Mar 15
  */
-public class PeerDescriptor implements Comparable<PeerDescriptor>, Externalizable {
+class PeerDescriptor implements Comparable<PeerDescriptor>, Externalizable {
 
-PeerID ID;
-long timestamp;
-ContentData[] contents;
+private PeerID ID;
+private byte[] contents;
 
 
 public PeerDescriptor() {}
@@ -28,15 +33,58 @@ public PeerDescriptor() {}
  * This is meant to be used by the local peer only, to provide its own
  * up-to-date descriptor.
  */
-public PeerDescriptor(PeerID p, long tstamp, ContentData[] c) {
+PeerDescriptor(PeerID p, ContentData[] c) {
   ID = p;
-  timestamp = tstamp;
-  contents = c;
+  ByteArrayOutputStream byteOs = new ByteArrayOutputStream();
+  GZIPOutputStream gzOut; ObjectOutput oout;
+  try {
+    gzOut = new GZIPOutputStream(byteOs);
+    oout = new ObjectOutputStream(gzOut);
+    oout.writeInt(c.length);
+    for (ContentData cd : c) {
+      cd.writeExternal(oout);
+    }
+    gzOut.finish();
+    oout.flush();
+  }
+  catch (IOException e) {
+    System.err.println("Peer: IO ERROR while creating local peer's descriptor.");
+    e.printStackTrace();
+    System.err.flush();
+  }
+  if (byteOs.size() > 0) {
+    contents = byteOs.toByteArray();
+  } else {
+    contents = null;
+  }
 }
 
 
 PeerID getPeerID() {
   return ID;
+}
+
+
+//TODO: optimization: extract only those contents that are interesting for the local peer
+ContentData[] getContents() {
+  ContentData[] res;
+  try {
+    ObjectInput oin = new ObjectInputStream(
+        new GZIPInputStream(new ByteArrayInputStream(contents)));
+    res = new ContentData[oin.readInt()];
+    for (int i = 0; i < res.length; i++) {
+      res[i] = new ContentData();
+      res[i].readExternal(oin);
+    }
+  }
+  catch (Exception e) {
+    System.err.println("Peer: ERROR while inflating remote peer's descriptor (ID = "
+        + ID.toString() + ").");
+    e.printStackTrace();
+    System.err.flush();
+    res = null;
+  }
+  return res;
 }
 
 
@@ -48,16 +96,8 @@ PeerID getPeerID() {
 @Override
 public void writeExternal(ObjectOutput out) throws IOException {
   ID.writeExternal(out);
-  out.writeLong(timestamp);
-  int size = contents.length;
-  out.writeInt(size);
-  if (size > 0) {
-    for (ContentData d : contents) {
-      synchronized (d) {
-        d.writeExternal(out);
-      }
-    }
-  }
+  out.writeInt(contents.length);
+  out.write(contents);
   out.flush();
 }
 
@@ -71,13 +111,8 @@ public void writeExternal(ObjectOutput out) throws IOException {
 public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
   ID = new PeerID();
   ID.readExternal(in);
-  timestamp = in.readLong();
-  int s = in.readInt();
-  contents = new ContentData[s];
-  for (int i = 0; i < s; i++) {
-    contents[i] = new ContentData();
-    contents[i].readExternal(in);
-  }
+  contents = new byte[in.readInt()];
+  in.readFully(contents);
 }
 
 
@@ -87,8 +122,17 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
  * @see java.lang.Comparable#compareTo(java.lang.Object)
  */
 @Override
-public int compareTo(PeerDescriptor o) { // TODO: what about equal() ??
+public int compareTo(PeerDescriptor o) {
   return ID.compareTo(o.ID);
+}
+
+
+/*
+ * (non-Javadoc)
+ * @see java.lang.Object#equals(java.lang.Object)
+ */
+public boolean equals(Object o) {
+  return ID.equals(((PeerDescriptor)o).ID);
 }
 
 }

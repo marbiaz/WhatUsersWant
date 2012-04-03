@@ -6,10 +6,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -17,6 +19,8 @@ import javax.swing.Timer;
 
 import wuw.comm.CommHandler;
 import wuw.comm.newscast.Newscast;
+import wuw.core.ContentData.Category;
+import wuw.core.ContentData.Interest;
 import wuw.pi.Transaction;
 import wuw.pi.PIHandler;
 import wuw.pi.Transaction.State;
@@ -39,14 +43,17 @@ final UIHandler ui;
 final PIHandler pi;
 final Newscast epidemic;
 final PeerID localID;
-final ArrayList<ContentData> contents;
-final ArrayList<Neighbor> globalNeighborhood;
+final ContentBasket myContents;
+final Neighborhood globalNeighborhood;
 BlockingQueue<PeerDescriptor> epidemicUpdates;
-// BlockingQueue<Transaction> p2pUpdates;
 Timer computer;
 
-public final boolean sharePrefs = true; // TODO: make these configurable!
+public final boolean sharePrefs = true; // TODO: make these 3 configurable!
 public final boolean shareInts = true;
+private final boolean saveAll = false; // -> not saving info about unknown contents
+// TODO:  this info (this neighbor sharing with others a content local peer is
+//        NOT currently trading) could reveal more about neighbor's interests.
+//        Surely it boosts up memory requirements...
 
 double pasSatisfaction = 0.5;
 double pacSatisfaction = 0.5;
@@ -70,8 +77,8 @@ Peer(PeerID p, CommHandler t, UIHandler ui, PIHandler pi, Newscast n) {
   epidemic = n;
   this.ui = ui;
   this.pi = pi;
-  contents = new ArrayList<ContentData>();
-  globalNeighborhood = new ArrayList<Neighbor>();
+  myContents = new ContentBasket();
+  globalNeighborhood = new Neighborhood();
   epidemicUpdates = new LinkedBlockingQueue<PeerDescriptor>(100);
   // p2pUpdates = new LinkedBlockingQueue<Transaction>(100);
   printLogs = Config.printLogs;
@@ -89,16 +96,15 @@ Peer(PeerID p, CommHandler t, UIHandler ui, PIHandler pi, Newscast n) {
 
 public Object getDescriptor() {
   // if (!(sharePrefs || shareInts)) return me; // ... what about c.ID & Co. ?
-  ContentData[] c = null;
-  int i = 0;
-  synchronized (contents) {
-    c = new ContentData[contents.size()];
-    Iterator<ContentData> cit = contents.iterator();
-    while (cit.hasNext()) {
-      c[i++] = cit.next();
+  Object res = null;
+  synchronized (myContents) {
+  synchronized (globalNeighborhood) {
+    if (myContents.size() > 0) {
+      ContentData[] c = myContents.toArray();
+      res = new PeerDescriptor(localID, c);
     }
-  }
-  return new PeerDescriptor(localID, System.currentTimeMillis(), c);
+  }}
+  return res;
 }
 
 
@@ -119,24 +125,6 @@ public CommHandler getTransport() {
 
 
 /**
- * @param id
- *          The ID of the content to get.
- * @return The {@link ContentData} identified by the given ID, or
- *         <code>null</code>, if no such content is found.
- */
-public ContentData getContent(String id) {
-  ContentData res = null;
-  synchronized (contents) {
-    int i = Collections.binarySearch(contents, new ContentData(id));
-    if (i >= 0) {
-      res = contents.get(i);
-    }
-  }
-  return res;
-}
-
-
-/**
  * Add a content to the content list of the local peer. If a content with the
  * same ID is already in the list, no addition occurs. Adding a content also
  * adds the neighbors associated with the {@link ContentData} to local peers'
@@ -150,39 +138,64 @@ public ContentData getContent(String id) {
  * @return <code>true</code> if the given content is added; <code>false</code>
  *         if it was already in the list.
  */
-public boolean addContent(ContentData c) {
+public boolean addContent(String id, int items, Category cat, Interest interest, PeerID[] peerList) {
   PeerID remote;
-  int l = c.intentions.length;
-  int chosen = Config.rand.nextInt(l); // send at least 1 msg for sure!
-  synchronized (globalNeighborhood) { // to avoid releasing the lock (see
-                                      // addNeighbor) after each iteration...
-    for (int i = 0; i < l; i++) {
-      remote = c.intentions[i].remote;
-      addNeighbor(new Neighbor(remote, System.currentTimeMillis()),
-          (i == chosen || Config.rand.nextDouble() < (Math.log(l) / l)));
-      // TODO: add remote to the list to be given to P2P application!!!
+  Neighbor n;
+  LocalContentData c;
+  boolean res = false;
+  int i, k = 0, l = peerList.length;
+  int j = l - 1;
+  long now = System.currentTimeMillis();
+  Neighbor[] neighs = null;
+  synchronized (myContents) {
+  synchronized (globalNeighborhood) {
+    c = myContents.getContent(id);
+    if (c == null) {
+      c = new LocalContentData(id, items, cat, interest);
+      myContents.addContent(c);
+      res = true;
+      neighs = new Neighbor[l];
+      for (i = 0; i < l; i++) {
+        remote = peerList[i];
+        n = globalNeighborhood.getNeighbor(remote);
+        if (n == null) {
+          n = new Neighbor(remote, now);
+          globalNeighborhood.addNeighbor(n);
+          neighs[k++] = n;
+        } else {
+          neighs[j--] = n;
+        }
+        n.addContent(c);
+      }
+      c.initIntentions(neighs);
+      // FIXME: if a global param says that info about unknown content should
+      // not be shared, the following should always be done on the peerList
+      Object descriptor = Config.getLocalPeer().getDescriptor();
+      if (descriptor != null) {
+      int chosen = k > 0 ? Config.rand.nextInt(k) : 0; // send at least 1 msg
+      for (i = 0; i < k; i++) {
+        if (i == chosen || Config.rand.nextDouble() < (Math.log(k) / k)) {
+          this.epidemic.sendCard(descriptor, neighs[i].ID);
+        }
+      }
+      } else {
+/**/    System.err.println("Peer: ATTENTION: local peer's card not sent due to previous errors.");
+        System.err.flush();
+      }
     }
+  }}
+  if (neighs != null) {
+    // FIXME: c and peerList must be given to P2P application!!!
   }
-  synchronized (contents) {
-    int i = Collections.binarySearch(contents, c);
-    if (i < 0) {
-      contents.add(-i - 1, c);
-    }
-  }
-
-  return true;
+  return res;
 }
 
 
-void addNeighbor(Neighbor n, boolean sendCard) {
-  synchronized (globalNeighborhood) {
-    int index = Collections.binarySearch(globalNeighborhood, n);
-    if (index < 0) {
-      globalNeighborhood.add(-index - 1, n);
-    }
-  }
-  if (sendCard) {
-    this.epidemic.sendCard(n.ID);
+@SuppressWarnings({ "unchecked", "rawtypes" })
+private void addUnique(List set, Comparable item) {
+  int i = Collections.binarySearch(set, item);
+  if (i < 0) {
+    set.add(-i - 1, item);
   }
 }
 
@@ -207,134 +220,164 @@ public void getEpidemicUpdates(Object upd[]) {
 /**/System.err.println("Peer: ATTENTION: Epidemic updates queue congestion!");
     System.err.flush();
   }
-/**/if (printLogs)
+/**/if (printLogs) {
     System.out.println("Peer : The epidemic updates queue currently contains "
         + epidemicUpdates.size() + " descriptors.");
-}
-
-
-private Neighbor nLookUp(PeerID p) {
-  Neighbor n = null;
-  int i = Collections.binarySearch(globalNeighborhood, new Neighbor(p));
-  if (i >= 0) {
-    n = globalNeighborhood.get(i);
   }
-  return n;
 }
 
 
-private ContentData cLookUp(String c) {
-  ContentData res = null;
-  int i = Collections.binarySearch(contents, new ContentData(c));
-  if (i >= 0) {
-    res = contents.get(i);
+// TODO:  optimizations (to be thought carefully w.r.t. intentions update pace):
+//        apply epidemic updates to global neighborhood (track who is modified)
+//        apply content updates to local contentData (track what is modified)
+//        compute novel intentions for
+//        -- the MODIFIED neighbors (newDescriptors U newNeighs)
+//        -- the MODIFIED content
+private void doTheMagic() {
+
+  int c;
+  String conts[] = null;
+  ArrayList<PeerDescriptor> temp = new ArrayList<PeerDescriptor>(); //FIXME: awful
+  ArrayList<PeerDescriptor> newDescriptors = new ArrayList<PeerDescriptor>();
+
+  c = epidemicUpdates.drainTo(temp);
+  for (int i = c - 1; i >= 0; i--) {
+    addUnique(newDescriptors, temp.get(i));
+  }
+
+  Transaction[] newTrans = pi.giveContentUpdates();
+
+  // TODO: consider also new prefs from user in the next line...
+  if (newDescriptors.size() == 0 && newTrans == null) return;
+
+  PeerID id;
+  Neighbor n;
+  PeerDescriptor pd;
+  Transaction t;
+  LocalContentData cd;
+  HashMap<String, BitSet> cmap;
+  String cid, pcid = null;
+  BitSet newItems = null;
+  long now = System.currentTimeMillis();
+  Iterator<PeerDescriptor> pdit;
+  ArrayList<PeerID> newNeighs = new ArrayList<PeerID>();
+  //boolean updated;
+
+  Arrays.sort(newTrans);
+  pdit = newDescriptors.iterator();
+  synchronized (myContents) {
+  synchronized (globalNeighborhood) {
+    while (pdit.hasNext()) {
+      pd = pdit.next();
+      id  = pd.getPeerID();
+      n = globalNeighborhood.getNeighbor(id);
+      if (n == null) {
+        n = new Neighbor(id, now);
+        globalNeighborhood.addNeighbor(n);
+        addUnique(newNeighs, id); // FIXME: not needed: newDescriptor is already ordered
+      }
+      /*updated =*/ n.update(pd, now, saveAll ? null : conts);
+      //if (updated) {
+        // TODO: keep track of 'n', but only once!
+      //}
+    }
+/**/if (printLogs) System.out.println("Current Neighborhood :\n"
+        + Config.printArray(globalNeighborhood.toArray()));
+
+/**/if (printLogs) System.out.println("New transactions :\n" + Config.printArray(newTrans));
+    cmap = new HashMap<String, BitSet>(); // it records newly downloaded pieces, if any
+    if (newTrans != null) {
+      n = null;
+      for (int i = 0; i < newTrans.length; i++) {
+        t = newTrans[i];
+        cid = t.getContentID();
+        id = t.getRemote();
+        if (n == null || !id.equals(n.ID)) {
+          n = globalNeighborhood.getNeighbor(id);
+        }
+        if (n == null) { // no such a neighbor in the neighborhood
+          n = new Neighbor(id);
+          globalNeighborhood.addNeighbor(n);
+          addUnique(newNeighs, id);
+        }
+        n.update(t, now);
+        // TODO: keep track of the neighbor, but only ONCE!!
+        // update local peer's bitmap if needed
+        if ((t.getType() == Type.IN) && (t.getState() == State.DONE)) {
+          if (pcid == null || !pcid.equals(cid)) {
+            if (cmap.containsKey(cid)) {
+              newItems = cmap.get(cid);
+            } else {
+              newItems = new BitSet();
+              cmap.put(cid, newItems);
+            }
+            pcid = cid;
+          }
+          newItems.set(t.getItem());
+        }
+      }
+    }
+    // TODO: find all neighbors having each item of the latest k transactions....
+
+    Iterator<String> ci = cmap.keySet().iterator();
+    while (ci.hasNext()) {
+      cid = ci.next();
+      newItems = cmap.get(cid);
+//      for (int i = 0; i < newTrans.length; i++) {
+//        t = newTrans[i];
+//        cid = t.getContentID();
+      cd = myContents.getContent(cid);
+      if (cd == null) {
+        System.err
+            .println("Peer: ERROR : transaction received for inexistent content (ID = "
+            + cid + ")!");
+        System.err.flush();
+      } else {
+        //TODO: update content cd
+        cd.itemMap.or(newItems);
+        cd.version++;
+      }
+    }
+    // TODO: compute satisfaction and adequation and sysEvaluation.
+    // TODO:  get new pref values from ui, if any.
+    // TODO:  compute new intentions per peer per content. Store the values, to be used later on.
+    // TODO: save the newly computed intentions to each content ...
+
+    Object descriptor = Config.getLocalPeer().getDescriptor();
+    if (descriptor != null) {
+      for (int i = 0; i < newNeighs.size(); i++) {
+        this.epidemic.sendCard(descriptor, newNeighs.get(i));
+      }
+    } else {
+/**/  System.err.println("Peer: ATTENTION: local peer's card not sent due to previous errors.");
+      System.err.flush();
+    }
+  }}
+//
+/**/if (printLogs) System.out.println("My Contents :\n" + Config.printArray(myContents.toArray()));
+
+  // TODO: compute new ranked list of neighbors and give it to pi
+  // TODO: send satisfaction and adequation and sysEvaluation to ui.
+}
+
+
+// FIXME: just to ease the testing....
+/************************ TEST FACILITIES ******************/
+public Object[] getNeighborhood() {
+  Object[] res;
+  synchronized (globalNeighborhood) {
+    res = globalNeighborhood.toArray();
   }
   return res;
 }
 
 
-private void doTheMagic() {
-  // TODO: compute satisfaction and adequation and sysEvaluation.
-
-  ArrayList<PeerDescriptor> newDescriptors = new ArrayList<PeerDescriptor>();
-  epidemicUpdates.drainTo(newDescriptors);
-  Collections.sort(newDescriptors);
-
-  Transaction[] newTrans = pi.getContentUpdates();
-  // TODO : what if no transaction/descriptors??
-  Arrays.sort(newTrans);
-
-  PeerID id;
-  Neighbor n, m;
-  PeerDescriptor pd;
-  Transaction t;
-  Iterator<PeerDescriptor> pdit = newDescriptors.iterator();
-  HashMap<String, BitSet> cmap;
-  String cid, pcid;
-  BitSet newItems;
-  synchronized (globalNeighborhood) {
-    for (int i = 0; pdit.hasNext(); i++) {
-      n = globalNeighborhood.size() <= i ? null : globalNeighborhood.get(i);
-      pd = pdit.next();
-      if (n == null || (n.ID.compareTo(pd.ID) > 0)) {
-        // TODO: add new neighbor in position i
-        // TODO: keep track of the neighbor
-      } else if (n.ID.equals(pd.ID)) {
-        // TODO: update n with pd's data
-        // TODO: keep track of the neighbor
-      }
-    }
-
-/**//* if (printLogs) */System.out.println("New transactions :\n" + Config.printArray(newTrans));
-    newItems = new BitSet();
-    pcid = newTrans[0].getContentID();
-    m = null;
-    cmap = new HashMap<String, BitSet>();
-    for (int i = 0; i < newTrans.length; i++) {
-      t = newTrans[i];
-      id = t.getRemote();
-      cid = t.getContentID();
-      if (m != null && !id.equals(m.ID)) {
-        // TODO: add it to neighborhood
-        m = null;
-      }
-      n = nLookUp(id);
-      if (m == null && n == null) {
-        // TODO: create such a neighbor m
-      } else if (m == null) {
-        m = n;
-      }
-      // TODO: update m ...
-      // TODO: keep track of the neighbor, but only ONCE!!
-      if ((t.getType() == Type.IN) && (t.getState() == State.DONE)) {
-        if (!pcid.equals(cid)) {
-          if (!newItems.isEmpty()) {
-            if (cmap.containsKey(pcid)) {
-              cmap.get(pcid).or(newItems);
-            } else {
-              cmap.put(pcid, newItems);
-            }
-            newItems = new BitSet();
-          }
-          pcid = cid;
-        }
-        newItems.set(t.getItem());
-      }
-    }
+public Object[] getContents() {
+  Object[] res;
+  synchronized (myContents) {
+    res = myContents.toArray();
   }
-
-  ContentData cd;
-  synchronized (contents) { // ATTENTION : from now on, no modification to the
-                            // neighborhood!!!
-    Iterator<String> ci = cmap.keySet().iterator();
-    while (ci.hasNext()) {
-      cid = ci.next();
-      newItems = cmap.get(cid);
-      cd = cLookUp(cid);
-      if (cd == null) {
-        System.err
-            .println("Peer: UNRECOVERABLE ERROR : transaction received for inexistent content!");
-        System.err.flush();
-        System.exit(2); // FIXME: Think of something better...
-      }
-      cd.itemMap.or(newItems);
-    }
-
-    // TODO:  get new pref values from ui, if any.
-
-    // TODO:  compute new intentions per peer per content.
-  }
-
-/**//*if (printLogs) */System.out.println("Contents :\n" + Config.printArray(contents.toArray()));
-
-  // TODO:  send satisfaction and adequation and sysEvaluation to ui.
-
-  // TODO:  compute new ranked list of neighbors and give it to pi
-
-  // TODO:  optimizations:
-  //        apply epidemic updates to global neighborhood (track who is modified)
-  //        apply content updates to local contentData (track what is modified)
-  //        compute novel intentions for the MODIFIED neighbors/contents
+  return res;
 }
 
 }

@@ -17,21 +17,23 @@ import java.io.ObjectOutput;
  */
 class Intention implements Comparable<Intention>, Externalizable {
 
-PeerID remote;
+Neighbor remote;
 double pasIntent;
 double pacIntent;
 
 
-Intention() {}
+Intention() {
+  remote = new Neighbor();
+}
 
 
-Intention(PeerID p) {
+Intention(Neighbor p) {
   remote = p;
   pasIntent = pacIntent = Double.NaN;
 }
 
 
-Intention(PeerID p, double pas, double pac) {
+Intention(Neighbor p, double pas, double pac) {
   remote = p;
   pasIntent = pas;
   pacIntent = pac;
@@ -63,7 +65,7 @@ public int compareTo(Intention o) {
  */
 @Override
 public void writeExternal(ObjectOutput out) throws IOException {
-  remote.writeExternal(out);
+  remote.ID.writeExternal(out);
   out.writeDouble(pasIntent);
   out.writeDouble(pacIntent);
 
@@ -78,8 +80,8 @@ public void writeExternal(ObjectOutput out) throws IOException {
  */
 @Override
 public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-  remote = new PeerID();
-  remote.readExternal(in);
+  // XXX this object will only be retained by the peer if id = Config.getLocalPeer().localID.
+  remote.ID.readExternal(in);
   pasIntent = in.readDouble();
   pacIntent = in.readDouble();
 }
@@ -91,7 +93,8 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
  * @see java.lang.Object#toString()
  */
 public String toString() {
-  return "<Peer: " + remote.toString() + " ;pas= " + pasIntent + " ;pac= " + pacIntent + " >";
+  return "<Peer: " + (remote == null ? "me" : remote.ID.toString())
+      + " ;pas= " + pasIntent + " ;pac= " + pacIntent + " >";
 }
 
 }

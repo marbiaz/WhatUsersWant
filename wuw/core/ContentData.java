@@ -15,10 +15,10 @@ import java.util.BitSet;
  * @author Marco Biazzini
  * @date 2012 Mar 06
  */
-public class ContentData implements Comparable<ContentData>, Externalizable {
+public class ContentData implements Comparable<Object>, Externalizable {
 
 public static enum Interest {
-  NEGLIGIBLE, LOW, HIGH, PRIMARY
+  UNKNOWN, NEGLIGIBLE, LOW, HIGH, PRIMARY
 };
 
 public static enum Category {
@@ -27,37 +27,35 @@ public static enum Category {
 
 
 String ID;
-BitSet itemMap; // neighbor's bitmap for this content
-Intention[] intentions; // pas & pac intentions toward other peers for this
-                        // content TODO: ordered by PeerID
-Interest interest; // peer's interest in this content TODO: is it better to
-                   // automatically infer it for neighbors?
+int items;
+BitSet itemMap; // bitmap for this content
+Intention[] intentions; // pas & pac intentions for this content
+                        // TODO: order intentions by PeerID
+Interest interest; // peer's interest in this content
 Category category;
 int version;
-
-
 // PreferenceSet pasPrefs;
 // PreferenceSet pacPrefs;
 
 
-ContentData() {}
-
-
-ContentData(String id) {
-  ID = id;
+ContentData() {
+  intentions = null;
 }
 
 
-public ContentData(String id, int items, Category c, Interest i, PeerID[] n) {
+//ContentData(String id) {
+//  ID = id;
+//}
+
+
+ContentData(String id, int items, Category c, Interest i) {
   ID = id;
+  this.items = items;
   itemMap = new BitSet(items);
   interest = i;
   category = c;
   version = 0;
-  intentions = new Intention[n.length];
-  for (int j = 0; j < intentions.length; j++) {
-    intentions[j] = new Intention(n[j]);
-  }
+  intentions = new Intention[0];
 }
 
 
@@ -92,12 +90,13 @@ String getID() {
 public void writeExternal(ObjectOutput out) throws IOException {
   out.writeInt(version);
   out.writeUTF(ID);
+  out.writeInt(items);
   out.writeUTF(interest.toString());
   out.writeUTF(category.toString());
   byte[] b = itemMap.toByteArray();
   out.writeInt(b.length);
   out.write(b);
-  out.writeInt(intentions.length); // TODO: optimization -> no need to send NaN values
+  out.writeInt(intentions.length);
   for (int i = 0; i < intentions.length; i++) {
     intentions[i].writeExternal(out);
   }
@@ -115,15 +114,27 @@ public void writeExternal(ObjectOutput out) throws IOException {
 public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
   version = in.readInt();
   ID = in.readUTF();
+  items = in.readInt();
   interest = Interest.valueOf(in.readUTF());
   category = Category.valueOf(in.readUTF());
   byte[] b = new byte[in.readInt()];
   in.readFully(b);
   itemMap = BitSet.valueOf(b);
-  intentions = new Intention[in.readInt()];
-  for (int i = 0; i < intentions.length; i++) {
-    intentions[i] = new Intention();
-    intentions[i].readExternal(in);
+  int i, ints = in.readInt();
+  // XXX: record only intentions toward the local peer!!
+  PeerID me = Config.getLocalPeer().localID;
+  Intention intent = new Intention();
+  for (i = 0; i < ints; i++) {
+    intent.readExternal(in);
+    if (intent.remote.equals(me)) {
+      intent.remote = null; //XXX: risky, but useful to avoid memory waste...
+      intentions = new Intention[1];
+      intentions[0] = intent;
+      intent = new Intention();
+    }
+  }
+  if (intentions == null) {
+    intentions = new Intention[0];
   }
 
 }
@@ -135,9 +146,10 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
  * @see java.lang.Object#toString()
  */
 public String toString() {
-  String res = "\nID : " + ID + " - version " + version + " -- Category : " + category.toString()
+  String res = ID + " (" + items + " items)"
+      + " - version " + version + " -- Category : " + category.toString()
       + "\nItemMap : " + itemMap.toString() + "\nInterest : " + interest.toString()
-      + "\nIntentions : " + Config.printArray(intentions) + "\n";
+      + "\nIntentions : " + Config.printArray(intentions);
   return res;
 }
 
@@ -148,8 +160,11 @@ public String toString() {
  * @see java.lang.Comparable#compareTo(java.lang.Object)
  */
 @Override
-public int compareTo(ContentData c) {
-  return this.ID.compareTo(c.ID);
+public int compareTo(Object c) {
+  if (c instanceof ContentData) {
+    return this.ID.compareTo(((ContentData)c).ID);
+  }
+  return this.ID.compareTo(c.toString());
 }
 
 
@@ -159,7 +174,10 @@ public int compareTo(ContentData c) {
  * @see java.lang.Object#equals(java.lang.Object)
  */
 public boolean equals(Object o) {
-  return this.ID.equals(((ContentData)o).ID);
+  if (o instanceof ContentData) {
+    return this.ID.equals(((ContentData)o).ID);
+  }
+  return this.ID.equals(o.toString());
 }
 
 }
