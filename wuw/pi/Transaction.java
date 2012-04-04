@@ -19,10 +19,10 @@ import wuw.core.PeerID;
  * @author Marco Biazzini
  * @date 2012 Feb 02
  */
-public class Transaction implements Comparable<Transaction> {
+public class Transaction implements Comparable<Transaction>, Cloneable {
 
 public static enum State {
-  ON, DONE
+  ON, DONE, WRONG
 };
 
 
@@ -108,7 +108,7 @@ public PeerID getRemote() {
  *          the remote to set
  */
 public void setRemote(PeerID remote) {
-  this.remote = remote;
+  this.remote  = remote;
 }
 
 
@@ -202,10 +202,11 @@ public void setMaxBandwidth(double maxBandwidth) {
  * @see java.lang.Object#toString()
  */
 public String toString() {
-  String res = "Remote peer : " + remote.toString() + " -- ContentID : " + contentID + "\nState : "
-      + state + " -- Type : " + type + " -- Item : " + item + "\nStarted at : " + startTimestamp
-      + " -- Ended at : " + endTimestamp + "\nBandwidth : " + actualBandwidth + " over "
-      + maxBandwidth + "\n----------\n";
+  String res = "ContentID : " + contentID + " -- Remote peer : " + remote
+      + "\nState : " + state + " -- Type : " + type + " -- Item : " + item
+      + "\nStarted at : " + startTimestamp
+      + " -- Ended at : " + endTimestamp + "\nBandwidth : " + actualBandwidth
+      + " over " + maxBandwidth + "\n----------\n";
   return res;
 }
 
@@ -218,24 +219,29 @@ public String toString() {
 @Override
 public int compareTo(Transaction t) {
   int res = this.remote.compareTo(t.remote);
-  int c = 0, last = 1000;
-  while (res == 0 && c < last) {
-    if (c == 0) {
-      res = this.contentID.compareTo(t.contentID);
-      c = 1;
-      continue;
-    }
-    if (c == 1) {
-      res = this.item - t.item;
-      c = 2;
-      continue;
-    }
-    if (c == 2) { // FIXME: check if this makes sense...
-      res = (int)(this.endTimestamp - t.endTimestamp);
-      c = last;
-    }
+  if (res == 0) {
+    res = this.contentID.compareTo(t.contentID);
+  }
+  if (res == 0) {
+    res = this.item - t.item;
+  }
+  if (res == 0) {
+    res = this.state.ordinal() - t.state.ordinal();
+  }
+  if (res == 0) { // FIXME: check if this makes sense...
+    res = (int)(this.endTimestamp - t.endTimestamp);
   }
   return res;
+}
+
+
+public Transaction clone() {
+  try {
+    return (Transaction)super.clone();
+  }
+  catch (CloneNotSupportedException e) {
+    return null;
+  }
 }
 
 }

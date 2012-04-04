@@ -27,8 +27,8 @@ PeerID[] peers;
 /*
  * Creates fake transactions for 20 contents. The bandwidth is fixed.
  */
-public PIStub(PeerID[] p) {
-  peers = p;
+public PIStub() {
+  peers = null;
   trans = new Transaction[20];
   for (int i = 0; i < trans.length; i++) {
     trans[i] = new Transaction();
@@ -52,6 +52,7 @@ public Transaction[] giveContentUpdates() {
   // All transactions lasted 5 secs.
   // Randomly assign a 'DONE' State to some transaction.
   // WARNING : the assignment is NOT consistent w.r.t. the item number!!!
+  if (peers == null) return null;
   for (int i = 0; i < trans.length; i++) {
     trans[i].setItem(Config.rand.nextInt(10));
     trans[i].setRemote(peers[Config.rand.nextInt(peers.length)]);
@@ -61,7 +62,13 @@ public Transaction[] giveContentUpdates() {
     trans[i].setState((Config.rand.nextDouble() < 0.3) ? State.DONE : State.ON);
   }
   // return a random number (between 2 and 20) of transactions
-  return Arrays.copyOfRange(trans, Config.rand.nextInt(7), Config.rand.nextInt(11) + 9);
+  Transaction[] res, r = Arrays.copyOfRange(trans, Config.rand.nextInt(7),
+      Config.rand.nextInt(11) + 9);
+  res = new Transaction[r.length];
+  for (int i =0; i <r.length; i++) {
+    res[i] = r[i].clone();
+  }
+  return res;
 }
 
 
@@ -70,8 +77,7 @@ public Transaction[] giveContentUpdates() {
  */
 @Override
 public void getPeers(PeerID[] peers) {
-  // TODO Auto-generated method stub
-  
+  this.peers = peers;
 }
 
 }
