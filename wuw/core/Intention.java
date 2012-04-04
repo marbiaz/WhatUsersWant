@@ -29,7 +29,7 @@ Intention() {
 
 Intention(Neighbor p) {
   remote = p;
-  pasIntent = pacIntent = Double.NaN;
+  pasIntent = pacIntent = 0.0;
 }
 
 

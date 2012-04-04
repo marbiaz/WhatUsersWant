@@ -32,12 +32,12 @@ Neighbor() {
 }
 
 
-Neighbor(PeerID p) {
-  ID = p;
-  reputation = 0;
-  timestamp = 0;
-  contents = new LinkedHashMap<String, NeighborContentData>();
-}
+//Neighbor(PeerID p) {
+//  ID = p;
+//  reputation = 0;
+//  timestamp = 0;
+//  contents = new LinkedHashMap<String, NeighborContentData>();
+//}
 
 
 Neighbor(PeerID p, long tstamp) {

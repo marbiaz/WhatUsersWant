@@ -42,6 +42,16 @@ Neighbor getNeighbor(PeerID p) {
 }
 
 
+int size() {
+  return neighbors.size();
+}
+
+
+//Neighbor getNeighbor(int index) {
+//  return neighbors.get(index);
+//}
+
+
 Object[] toArray() {
   return neighbors.toArray();
 }

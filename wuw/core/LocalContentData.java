@@ -41,7 +41,7 @@ void initIntentions(Neighbor[] n) {
 
 
 public String toString() {
-  String res = super.toString() ;//+ "\nMy ongoing downloads:\n"
+  String res = super.toString() + "\nMy ongoing downloads:\n";
       //+ Config.printArray(downloads.toArray()) + "\nMy ongoing uploads: "
       //+ Config.printArray(uploads.toArray()) + "\nMy terminated downloads:\n"
       //+ Config.printArray(downloads.toArray()) + "\nMy terminated uploads: "

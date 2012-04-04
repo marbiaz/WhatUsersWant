@@ -33,6 +33,7 @@ void init() {
     downloads = new LinkedList<Transaction>();
     uploads = new LinkedList<Transaction>();
     contentInfo.interest = Interest.UNKNOWN;
+    contentInfo.version = -1;
     contentInfo.intentions = new Intention[1];
     contentInfo.intentions[0] = new Intention(null);
   }

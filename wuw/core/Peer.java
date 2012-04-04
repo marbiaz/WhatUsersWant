@@ -246,9 +246,12 @@ private void doTheMagic() {
   }
 
   Transaction[] newTrans = pi.giveContentUpdates();
-
-  // TODO: consider also new prefs from user in the next line...
-  if (newDescriptors.size() == 0 && newTrans == null) return;
+  if (newTrans == null) {
+    newTrans = new Transaction[0];
+  } else {
+    Arrays.sort(newTrans);
+  }
+/**/if (printLogs) System.out.println("New transactions :\n" + Config.printArray(newTrans));
 
   PeerID id;
   Neighbor n;
@@ -259,12 +262,10 @@ private void doTheMagic() {
   String cid, pcid = null;
   BitSet newItems = null;
   long now = System.currentTimeMillis();
-  Iterator<PeerDescriptor> pdit;
+  Iterator<PeerDescriptor> pdit = newDescriptors.iterator();
   ArrayList<PeerID> newNeighs = new ArrayList<PeerID>();
   //boolean updated;
 
-  Arrays.sort(newTrans);
-  pdit = newDescriptors.iterator();
   synchronized (myContents) {
   synchronized (globalNeighborhood) {
     while (pdit.hasNext()) {
@@ -281,12 +282,8 @@ private void doTheMagic() {
         // TODO: keep track of 'n', but only once!
       //}
     }
-/**/if (printLogs) System.out.println("Current Neighborhood :\n"
-        + Config.printArray(globalNeighborhood.toArray()));
 
-/**/if (printLogs) System.out.println("New transactions :\n" + Config.printArray(newTrans));
     cmap = new HashMap<String, BitSet>(); // it records newly downloaded pieces, if any
-    if (newTrans != null) {
       n = null;
       for (int i = 0; i < newTrans.length; i++) {
         t = newTrans[i];
@@ -316,7 +313,7 @@ private void doTheMagic() {
           newItems.set(t.getItem());
         }
       }
-    }
+
     // TODO: find all neighbors having each item of the latest k transactions....
 
     Iterator<String> ci = cmap.keySet().iterator();
@@ -353,7 +350,9 @@ private void doTheMagic() {
       System.err.flush();
     }
   }}
-//
+
+/**/if (printLogs) System.out.println("Current Neighborhood :\n"
+      + Config.printArray(globalNeighborhood.toArray()));
 /**/if (printLogs) System.out.println("My Contents :\n" + Config.printArray(myContents.toArray()));
 
   // TODO: compute new ranked list of neighbors and give it to pi

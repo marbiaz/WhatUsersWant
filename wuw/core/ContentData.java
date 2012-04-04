@@ -10,20 +10,21 @@ import java.util.BitSet;
 
 
 /**
- * This class collects all the data related to a given content.
+ * This class collects the data related to a given content.
  * 
  * @author Marco Biazzini
  * @date 2012 Mar 06
  */
 public class ContentData implements Comparable<Object>, Externalizable {
+//FIXME: this class should not be public....
 
 public static enum Interest {
   UNKNOWN, NEGLIGIBLE, LOW, HIGH, PRIMARY
-};
+}
 
 public static enum Category {
   MOVIES, CARTOONS, NEWS, VIDEOCLIPS, MUSIC, BOOKS
-}; // TODO: the CDN should provide this!!
+} // FIXME: the CDN should provide this!!
 
 
 String ID;
@@ -41,11 +42,6 @@ int version;
 ContentData() {
   intentions = null;
 }
-
-
-//ContentData(String id) {
-//  ID = id;
-//}
 
 
 ContentData(String id, int items, Category c, Interest i) {
