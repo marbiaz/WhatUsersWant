@@ -142,6 +142,7 @@ public boolean addContent(String id, int items, Category cat, Interest interest,
   PeerID remote;
   Neighbor n;
   LocalContentData c;
+  Object descriptor = null;
   boolean res = false;
   int i, k = 0, l = peerList.length;
   int j = l - 1;
@@ -168,22 +169,22 @@ public boolean addContent(String id, int items, Category cat, Interest interest,
         n.addContent(c);
       }
       c.initIntentions(neighs);
-      // FIXME: if a global param says that info about unknown content should
-      // not be shared, the following should always be done on the peerList
-      Object descriptor = Config.getLocalPeer().getDescriptor();
-      if (descriptor != null) {
-      int chosen = k > 0 ? Config.rand.nextInt(k) : 0; // send at least 1 msg
-      for (i = 0; i < k; i++) {
-        if (i == chosen || Config.rand.nextDouble() < (Math.log(k) / k)) {
-          this.epidemic.sendCard(descriptor, neighs[i].ID);
-        }
-      }
-      } else {
-/**/    System.err.println("Peer: ATTENTION: local peer's card not sent due to previous errors.");
-        System.err.flush();
-      }
+      // TODO: if a global param says that info about unknown content should
+      // not be shared, sendCard should always be triggered on peerList
+      if (k > 0) descriptor = Config.getLocalPeer().getDescriptor();
     }
   }}
+  if (descriptor != null) {
+    int chosen = k > 0 ? Config.rand.nextInt(k) : 0; // send at least 1 msg
+    for (i = 0; i < k; i++) {
+      if (i == chosen || Config.rand.nextDouble() < (Math.log(k) / k)) {
+        this.epidemic.sendCard(descriptor, neighs[i].ID);
+      }
+    }
+  } else if (k > 0) {
+/**/System.err.println("Peer: ATTENTION: local peer's card not sent due to previous errors.");
+    System.err.flush();
+  }
   if (neighs != null) {
     // FIXME: c and peerList must be given to P2P application!!!
   }
@@ -235,13 +236,13 @@ public void getEpidemicUpdates(Object upd[]) {
 //        -- the MODIFIED content
 private void doTheMagic() {
 
-  int c;
+  int i, j, c, dl, tl;
   String conts[] = null;
   ArrayList<PeerDescriptor> temp = new ArrayList<PeerDescriptor>(); //FIXME: awful
   ArrayList<PeerDescriptor> newDescriptors = new ArrayList<PeerDescriptor>();
 
-  c = epidemicUpdates.drainTo(temp);
-  for (int i = c - 1; i >= 0; i--) {
+  j = epidemicUpdates.drainTo(temp);
+  for (i = j - 1; i >= 0; i--) {
     addUnique(newDescriptors, temp.get(i));
   }
 
@@ -258,47 +259,55 @@ private void doTheMagic() {
   PeerDescriptor pd;
   Transaction t;
   LocalContentData cd;
-  HashMap<String, BitSet> cmap;
   String cid, pcid = null;
   BitSet newItems = null;
+  Object descriptor = null;
+  boolean goT = true, goD = true, nowD;
   long now = System.currentTimeMillis();
-  Iterator<PeerDescriptor> pdit = newDescriptors.iterator();
+  // it records newly downloaded pieces, if any;
+  HashMap<String, BitSet> cmap = new HashMap<String, BitSet>();
   ArrayList<PeerID> newNeighs = new ArrayList<PeerID>();
   //boolean updated;
 
   synchronized (myContents) {
   synchronized (globalNeighborhood) {
-    while (pdit.hasNext()) {
-      pd = pdit.next();
-      id  = pd.getPeerID();
-      n = globalNeighborhood.getNeighbor(id);
+    i = 0; j = 0; n = null;
+    dl = newDescriptors.size();
+    tl = newTrans.length;
+    while (goD || goT) {
+      pd = newDescriptors.get(i);
+      t = newTrans[j];
+      c = pd.getPeerID().compareTo(t.getRemote());
+      nowD = !goT || (goD && c <= 0);
+      if (nowD) {
+        id = pd.getPeerID();
+        if ((i + 1) < dl) {
+          i++;
+        } else {
+          goD = false;
+        }
+      } else { // if goT && (!goD || c > 0)
+        id = t.getRemote();
+        if ((j + 1) < tl) {
+          j++;
+        } else {
+          goT = false;
+        }
+      }
+      if (n == null || !n.ID.equals(id)) {
+        n = globalNeighborhood.getNeighbor(id);
+      }
       if (n == null) {
         n = new Neighbor(id, now);
         globalNeighborhood.addNeighbor(n);
-        addUnique(newNeighs, id); // FIXME: not needed: newDescriptor is already ordered
+        addUnique(newNeighs, id);
       }
-      /*updated =*/ n.update(pd, now, saveAll ? null : conts);
-      //if (updated) {
-        // TODO: keep track of 'n', but only once!
-      //}
-    }
-
-    cmap = new HashMap<String, BitSet>(); // it records newly downloaded pieces, if any
-      n = null;
-      for (int i = 0; i < newTrans.length; i++) {
-        t = newTrans[i];
+      if (nowD) {
+        /*updated =*/ n.update(pd, now, saveAll ? null : conts);
+      } else { // if goT && (!goD || c > 0)
         cid = t.getContentID();
-        id = t.getRemote();
-        if (n == null || !id.equals(n.ID)) {
-          n = globalNeighborhood.getNeighbor(id);
-        }
-        if (n == null) { // no such a neighbor in the neighborhood
-          n = new Neighbor(id);
-          globalNeighborhood.addNeighbor(n);
-          addUnique(newNeighs, id);
-        }
         n.update(t, now);
-        // TODO: keep track of the neighbor, but only ONCE!!
+        // updated = true;
         // update local peer's bitmap if needed
         if ((t.getType() == Type.IN) && (t.getState() == State.DONE)) {
           if (pcid == null || !pcid.equals(cid)) {
@@ -313,8 +322,12 @@ private void doTheMagic() {
           newItems.set(t.getItem());
         }
       }
+    //if (updated) {
+      // TODO: keep track of 'n', but only once!
+    //}
+    }
 
-    // TODO: find all neighbors having each item of the latest k transactions....
+    // TODO: find all neighbors having each item of the latest transactions....
 
     Iterator<String> ci = cmap.keySet().iterator();
     while (ci.hasNext()) {
@@ -340,17 +353,16 @@ private void doTheMagic() {
     // TODO:  compute new intentions per peer per content. Store the values, to be used later on.
     // TODO: save the newly computed intentions to each content ...
 
-    Object descriptor = Config.getLocalPeer().getDescriptor();
-    if (descriptor != null) {
-      for (int i = 0; i < newNeighs.size(); i++) {
-        this.epidemic.sendCard(descriptor, newNeighs.get(i));
-      }
-    } else {
-/**/  System.err.println("Peer: ATTENTION: local peer's card not sent due to previous errors.");
-      System.err.flush();
-    }
+    if (newNeighs.size() > 0) descriptor = Config.getLocalPeer().getDescriptor();
   }}
-
+  if (descriptor != null) {
+    for (i = 0; i < newNeighs.size(); i++) {
+      this.epidemic.sendCard(descriptor, newNeighs.get(i));
+    }
+  } else if (newNeighs.size() > 0) {
+/**/  System.err.println("Peer: ATTENTION: local peer's card not sent due to previous errors.");
+    System.err.flush();
+  }
 /**/if (printLogs) System.out.println("Current Neighborhood :\n"
       + Config.printArray(globalNeighborhood.toArray()));
 /**/if (printLogs) System.out.println("My Contents :\n" + Config.printArray(myContents.toArray()));
