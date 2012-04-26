@@ -3,12 +3,13 @@
 package wuw.ui;
 
 /**
- * A instance of this class identify a one Preference
+ * An instance of this class identify a user's preference.
  *
+ * @author Marco Biazzini
  * @author Adriana Perez-Espinosa
  * @date 2012 Feb 15
  */
-public class Preference {
+public class Preference implements Comparable<Preference> {
 
 /**
  * @uml.property name="name"
@@ -139,6 +140,28 @@ public double getStep() {
  */
 public Object getDefaultVal() {
   return this.defaultValue;
+}
+
+
+/* (non-Javadoc)
+ * @see java.lang.Comparable#compareTo(java.lang.Object)
+ */
+@Override
+public int compareTo(Preference o) {
+  return this.name.compareTo(o.getName());
+}
+
+
+/*
+ * (non-Javadoc)
+ * @see java.lang.Object#equals(java.lang.Object)
+ */
+@Override
+public boolean equals(Object o) {
+  if (o instanceof Preference) {
+    return this.name.equals(((Preference) o).getName());
+  }
+  return false;
 }
 
 }

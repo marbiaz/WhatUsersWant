@@ -10,6 +10,29 @@ package wuw.ui;
  */
 public interface UIHandler {
 
+public static final String[] feedback_measures = {
+  "Peer-as-server Adequation",
+  "Peer-as-server Satisfaction",
+  "Peer-as-server System Evaluation",
+  "Peer-as-client Adequation",
+  "Peer-as-client Satisfaction",
+  "Peer-as-client System Evaluation"
+};
+
+public static final double[] feedback_defaults = {
+  0.5,
+  0.5,
+  1.0,
+  0.5,
+  0.5,
+  1.0
+};
+
+public static final Preference[] preferences = {
+  //new Preference("Pippo", )
+};
+
+
 /**
  * Initialize a numeric preference by specifying its validity range and the step
  * at which possible values must be set.
