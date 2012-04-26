@@ -26,7 +26,9 @@ private PeerID ID;
 private byte[] contents;
 
 
-public PeerDescriptor() {}
+public PeerDescriptor() {
+  contents = new byte[0];
+}
 
 
 /*
@@ -55,13 +57,18 @@ PeerDescriptor(PeerID p, ContentData[] c) {
   if (byteOs.size() > 0) {
     contents = byteOs.toByteArray();
   } else {
-    contents = null;
+    contents = new byte[0];
   }
 }
 
 
 PeerID getPeerID() {
   return ID;
+}
+
+
+boolean isValid() {
+  return contents.length > 0;
 }
 
 
@@ -97,7 +104,9 @@ ContentData[] getContents() {
 public void writeExternal(ObjectOutput out) throws IOException {
   ID.writeExternal(out);
   out.writeInt(contents.length);
-  out.write(contents);
+  if (contents.length > 0) {
+    out.write(contents);
+  }
   out.flush();
 }
 

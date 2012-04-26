@@ -15,7 +15,7 @@ import java.io.ObjectOutput;
  * @author Marco Biazzini
  * @date 2012 Mar 15
  */
-class Intention implements Comparable<Intention>, Externalizable {
+class Intention implements Comparable<Object>, Externalizable {
 
 Neighbor remote;
 double pasIntent;
@@ -53,8 +53,11 @@ public boolean equals(Object o) {
  * (non-Javadoc)
  * @see java.lang.Comparable#compareTo(java.lang.Object)
  */
-public int compareTo(Intention o) {
-  return remote.compareTo(o.remote);
+public int compareTo(Object o) {
+  if (o instanceof Intention) {
+    return remote.compareTo(((Intention)o).remote);
+  }
+  return remote.compareTo((PeerID)o);
 }
 
 
@@ -80,7 +83,7 @@ public void writeExternal(ObjectOutput out) throws IOException {
  */
 @Override
 public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-  // XXX this object will only be retained by the peer if id = Config.getLocalPeer().localID.
+  // this object will only be retained by the peer if id = Config.getLocalPeer().localID.
   remote.ID.readExternal(in);
   pasIntent = in.readDouble();
   pacIntent = in.readDouble();
@@ -94,7 +97,7 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
  */
 public String toString() {
   return "<Peer: " + (remote == null ? "me" : remote.ID.toString())
-      + " ;pas= " + pasIntent + " ;pac= " + pacIntent + " >";
+      + "; pas = " + pasIntent + "; pac = " + pacIntent + " >";
 }
 
 }

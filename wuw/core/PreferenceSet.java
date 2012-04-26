@@ -7,9 +7,9 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.concurrent.ConcurrentHashMap;
-
-import wuw.ui.Preference;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 
 /**
@@ -21,30 +21,34 @@ import wuw.ui.Preference;
  * @author Marco Biazzini
  * @date 2012 Feb 10
  */
-public class PreferenceSet implements Externalizable {
+class PreferenceSet implements Externalizable {
 
-// long contentID;
-public ConcurrentHashMap<String, Preference[][]> prefs;
-// TODO: Better LinkedHasMap ??
+LinkedHashMap<String, Object> prefs;
 
 
-public PreferenceSet() {}
+public PreferenceSet() {
+  prefs = new LinkedHashMap<String, Object>();
+}
 
 
-/**
- * It initializes the internal hashmap with the given labels and values. It
- * assumes correct arguments are given.
- * 
- * @param p
- *          Labels of the preferences.
- * @param val
- *          Values of the preferences whose labels are in <code>p</code>, in the
- *          respective order.
- */
-PreferenceSet(String[] p, Preference[][][] val) {
-  for (int i = 0; i < p.length; i++) {
-    prefs.put(p[i], val[i]);
+PreferenceSet(String[] name, Object[] val) {
+  prefs = new LinkedHashMap<String, Object>();
+  for (int i = 0; i < name.length; i++) {
+    prefs.put(name[i], val[i]);
   }
+}
+
+
+Object getValue(String name) {
+  if (prefs.containsKey(name)) {
+    return prefs.get(name);
+  }
+  return null;
+}
+
+
+void setValue(String name, Object value) {
+    prefs.put(name, value);
 }
 
 
@@ -55,8 +59,20 @@ PreferenceSet(String[] p, Preference[][][] val) {
  */
 @Override
 public void writeExternal(ObjectOutput out) throws IOException {
-  // TODO Auto-generated method stub
-
+  if (Peer.sharePrefs) {
+    int size = prefs.size();
+    out.writeInt(size);
+    Entry<String, Object> p;
+    Iterator<Entry<String, Object>> set = prefs.entrySet().iterator();
+    for (int i = 0; i < size; i++) {
+      p = set.next();
+      out.writeUTF(p.getKey());
+      out.writeObject(p.getValue());
+    }
+  } else {
+    out.writeInt(0);
+  }
+  out.flush();
 }
 
 
@@ -67,8 +83,24 @@ public void writeExternal(ObjectOutput out) throws IOException {
  */
 @Override
 public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-  // TODO Auto-generated method stub
+  int size = in.readInt();
+  String name;
+  for (int i = 0; i < size; i++) {
+    name = in.readUTF();
+    prefs.put(name, in.readObject());
+  }
+}
 
+
+public String toString() {
+  Iterator<Entry<String, Object>> it = prefs.entrySet().iterator();
+  Entry<String, Object> e;
+  String res = "";
+  while (it.hasNext()) {
+    e = it.next();
+    res += "Label: " + e.getKey() + " -- Value: " + e.getValue().toString() + "\n";
+  }
+  return res;
 }
 
 }

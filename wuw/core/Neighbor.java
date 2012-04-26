@@ -3,7 +3,9 @@
 package wuw.core;
 
 import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 
 import wuw.pi.Transaction;
 
@@ -21,7 +23,7 @@ class Neighbor implements Comparable<Object> {
 PeerID ID; // global!
 long timestamp; // TODO: ?? time of latest update to neighbor's data
 //for each content, info related to it and this neighbor.
-LinkedHashMap<String, NeighborContentData> contents; //TODO: concurrent?
+ArrayList<NeighborContentData> contents;
 double reputation; // global!
 
 
@@ -32,31 +34,12 @@ Neighbor() {
 }
 
 
-//Neighbor(PeerID p) {
-//  ID = p;
-//  reputation = 0;
-//  timestamp = 0;
-//  contents = new LinkedHashMap<String, NeighborContentData>();
-//}
-
-
 Neighbor(PeerID p, long tstamp) {
   ID = p;
   timestamp = tstamp;
   reputation = 0;
-  contents = new LinkedHashMap<String, NeighborContentData>();
+  contents = new ArrayList<NeighborContentData>();
 }
-
-
-//Neighbor(PeerDescriptor d, long tstamp) {
-//  ID = d.ID;
-//  timestamp = tstamp;
-//  reputation = 0;
-//  this.contents = new LinkedHashMap<String, NeighborContentData>();
-//  for (ContentData c : d.contents) {
-//    this.contents.put(c.ID, new NeighborContentData(c));
-//  }
-//}
 
 
 void setPeerID(PeerID p) {
@@ -69,39 +52,68 @@ PeerID getPeerID() {
 }
 
 
-//TODO: create contents and transaction lists if necessary!!
-//content version = -1 -> intentions etc. null until a descriptor arrives???
-void update(Transaction t, long tstamp) {
-
+String[] getContents() {
+  String[] res = new String[contents.size()];
+  Iterator<NeighborContentData> it = contents.iterator();
+  for (int i = 0; it.hasNext(); i++) {
+    res[i] = it.next().getID();
+  }
+  return res;
 }
 
 
-void addContent(ContentData c) {
+NeighborContentData getContent(String id) {
+  int i = Collections.binarySearch(contents, id);
+  if (i >= 0) {
+    return contents.get(i);
+  }
+  return null;
+}
+
+
+NeighborContentData addContent(ContentData c) {
   NeighborContentData nc;
-  if (!contents.containsKey(c.ID)) {
-    nc = new NeighborContentData(c);
-    contents.put(nc.contentInfo.ID, nc);
+  int i = Collections.binarySearch(contents, c.ID);
+  if (i >= 0) {
+    nc = contents.get(i);
   } else {
-    nc = contents.get(c.ID);
+    nc = new NeighborContentData(c);
+    contents.add(-i - 1, nc);
   }
   nc.init();
+  return nc;
 }
 
 
+void update(ContentData c, Transaction t, long tstamp) {
+  NeighborContentData nc = getContent(t.getContentID());
+  if (nc == null || nc.downloads == null) {
+    nc = addContent(c);
+  }
+  nc.addTransaction(t);
+  timestamp = tstamp;
+}
+
+
+//TODO: add a mechanism to delete some contents the neigh no longer wants to share
+// something like : the descr. contains a negative version number whose
+// absolute value is higher than the current one, thus the content must be deleted.
+// ISSUE: how long must the neigh spread a descriptor with such a version number?
 boolean update(PeerDescriptor d, long tstamp, String[] conts) {
-  NeighborContentData lc;
-  boolean newer = false;
-  ContentData[] cs = d.getContents();
+  NeighborContentData nc = null;
+  boolean newer = false; int i;
+  ContentData c, cs[] = d.getContents();
   if (cs != null) {
-    for (ContentData c : cs) {
-      lc = this.contents.get(c.ID);
-      if (lc != null && (c.version > lc.contentInfo.version)) {
-        lc.contentInfo = c;
-        newer = true;
-      } else if (lc == null) {
+    for (int j = 0; j < cs.length; j++) {
+      c = cs[j];
+      i = Collections.binarySearch(contents, c.ID);
+      if (i >= 0) {
+        nc = contents.get(i);
+        newer = nc.update(c);
+      } else {
         if ((conts == null) || (Arrays.binarySearch(conts, c.ID) >= 0)) {
-          lc = new NeighborContentData(c);
-          this.contents.put(c.ID, lc);
+          nc = new NeighborContentData(c);
+          contents.add(-i - 1, nc); // no nc.init, because nc may be not interesting
           newer = true;
         }
       }
@@ -132,7 +144,7 @@ public boolean equals(Object o) {
  */
 public String toString() {
   String res = ID.toString() + " - " + timestamp + "\nRep. : " + reputation + "\n"
-      + ((contents.size() > 0) ? Config.printArray(contents.values().toArray()) : "");
+      + ((contents.size() > 0) ? Config.printArray(contents.toArray()) : "");
   return res;
 }
 

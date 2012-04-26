@@ -2,7 +2,9 @@ package wuw.core;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 
 import wuw.comm.CommHandler;
@@ -12,7 +14,7 @@ import wuw.comm.newscast.Newscast;
 import wuw.pi.PIHandler;
 import wuw.pi.PIStub;
 import wuw.ui.UIHandler;
-import wuw.ui.WebUIHandler;
+import wuw.ui.WebUI.WebUIHandler;
 
 
 /**
@@ -86,7 +88,7 @@ static public boolean set(String[] args) {
   PIHandler pi = new PIStub(); // TODO: write a decent pi configuration....
 
   localPeer = new Peer(pid, com, ui, pi, news);
-  pi.getPeers(readPeerList(args[args.length - 1], false)); // FIXME: to avoid crash on testing
+  pi.getPeers(null, readPeerList(args[args.length - 1], false)); // FIXME: to avoid crash on testing
 
   return true;
 }
@@ -165,8 +167,36 @@ static private void usage() {
 }
 
 
-/**************************** DEBUG UTILITIES ********************************/
+/**************************** UTILITIES ********************************/
 
+/**
+ * It adds {@link java.lang.Comparable} objects (of any type) to the given list.
+ * The list will be always ordered according to the natural ordering of the items.
+ * No duplicates are allowed in the list, thus no addition occurs if an item is
+ * already in the list.<br>
+ * No type checking on the objects being added is performed. Thus the caller must
+ * be sure that the items being added are consistent with respect to their
+ * mutual comparison.
+ *
+ * @param set The list that hosts the items
+ * @param item The oject to be added
+ */
+@SuppressWarnings({ "unchecked", "rawtypes" })
+static public void addUnique(List set, Comparable item) {
+  int i = Collections.binarySearch(set, item);
+  if (i < 0) {
+    set.add(-i - 1, item);
+  }
+}
+
+
+/**
+ * It provides the printout of all the objects in the given array,
+ * one per line, each line starting with the array index of the object.
+ *
+ * @param a array of objects to be printed
+ * @return A String containing the objects printout.
+ */
 static public String printArray(Object[] a) {
   String res = "";
   if (a == null) {

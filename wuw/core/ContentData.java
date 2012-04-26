@@ -6,7 +6,9 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Iterator;
 
 
 /**
@@ -30,13 +32,12 @@ public static enum Category {
 String ID;
 int items;
 BitSet itemMap; // bitmap for this content
-Intention[] intentions; // pas & pac intentions for this content
-                        // TODO: order intentions by PeerID
+ArrayList<Intention> intentions; // pas & pac intentions for this content
 Interest interest; // peer's interest in this content
 Category category;
 int version;
-// PreferenceSet pasPrefs;
-// PreferenceSet pacPrefs;
+PreferenceSet pasPrefs;
+PreferenceSet pacPrefs;
 
 
 ContentData() {
@@ -51,25 +52,10 @@ ContentData(String id, int items, Category c, Interest i) {
   interest = i;
   category = c;
   version = 0;
-  intentions = new Intention[0];
+  intentions = new ArrayList<Intention>();
+  pasPrefs = new PreferenceSet();
+  pacPrefs = new PreferenceSet();
 }
-
-
-// ContentData(String ID, BitSet items, Interest i, Category c,
-// PeerID[] remotePeers, double[][] ints) {
-// this.ID = ID;
-// itemMap = items;
-// interest = i;
-// category = c;
-// if (remotePeers != null) {
-// intentions = new Intention[ints.length];
-// for (int j = 0; j < ints.length; j++) {
-// intentions[j] = new Intention(remotePeers[j], ints[j][0], ints[j][1]);
-// }
-// } else {
-// intentions = null;
-// }
-// }
 
 
 String getID() {
@@ -92,10 +78,16 @@ public void writeExternal(ObjectOutput out) throws IOException {
   byte[] b = itemMap.toByteArray();
   out.writeInt(b.length);
   out.write(b);
-  out.writeInt(intentions.length);
-  for (int i = 0; i < intentions.length; i++) {
-    intentions[i].writeExternal(out);
+  if (Peer.shareInts) {
+    out.writeInt(intentions.size());
+    Iterator<Intention> it = intentions.iterator();
+    while (it.hasNext()) {
+      it.next().writeExternal(out);
+    }
+  } else {
+    out.writeInt(0);
   }
+  pasPrefs.writeExternal(out);
 
   out.flush();
 }
@@ -117,22 +109,23 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
   in.readFully(b);
   itemMap = BitSet.valueOf(b);
   int i, ints = in.readInt();
-  // XXX: record only intentions toward the local peer!!
+  // XXX: record only intentions and prefs toward the local peer!!
   PeerID me = Config.getLocalPeer().localID;
+  intentions = new ArrayList<Intention>(1);
   Intention intent = new Intention();
   for (i = 0; i < ints; i++) {
     intent.readExternal(in);
     if (intent.remote.equals(me)) {
-      intent.remote = null; //XXX: risky, but useful to avoid memory waste...
-      intentions = new Intention[1];
-      intentions[0] = intent;
+      intent.remote = null; // risky, but useful to avoid memory waste
+      intentions.add(intent);
       intent = new Intention();
     }
   }
-  if (intentions == null) {
-    intentions = new Intention[0];
+  if (intentions.size() == 0) {
+    intentions.add(new Intention(null));
   }
-
+  pasPrefs = new PreferenceSet();
+  pasPrefs.readExternal(in);
 }
 
 
@@ -145,7 +138,9 @@ public String toString() {
   String res = ID + " (" + items + " items)"
       + " - version " + version + " -- Category : " + category.toString()
       + "\nItemMap : " + itemMap.toString() + "\nInterest : " + interest.toString()
-      + "\nIntentions : " + Config.printArray(intentions);
+      + "\nIntentions:\n" + Config.printArray(intentions.toArray())
+      + "Pas preferences:\n" + pasPrefs.toString()
+      + "Pac preferences:" + (pacPrefs == null ? " unknown.\n" : "\n" + pacPrefs.toString());
   return res;
 }
 

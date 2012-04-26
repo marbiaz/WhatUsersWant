@@ -24,10 +24,22 @@ Neighborhood() {
 }
 
 
-void addNeighbor(Neighbor n) {
+boolean addNeighbor(Neighbor n) {
+  int nindex = Collections.binarySearch(neighbors, n);
+  boolean res = nindex < 0;
+  if (res) {
+    neighbors.add(-nindex - 1, n);
+  }
+  return res;
+}
+
+
+void removeNeighbor(PeerID n) {
   int index = Collections.binarySearch(neighbors, n);
-  if (index < 0) {
-    neighbors.add(-index - 1, n);
+  if (index >= 0) {
+    neighbors.remove(index);
+    System.err.println("Peer: ATTENTION : removing neighbor " + n.toString());
+    System.err.flush();
   }
 }
 
@@ -47,13 +59,11 @@ int size() {
 }
 
 
-//Neighbor getNeighbor(int index) {
-//  return neighbors.get(index);
-//}
-
-
 Object[] toArray() {
-  return neighbors.toArray();
+  if (neighbors.size() > 0) {
+    return neighbors.toArray();
+  }
+  return new Object[0];
 }
 
 }

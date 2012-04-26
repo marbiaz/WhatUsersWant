@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.Iterator;
 
 
-
 /*
  * This class encapsulates the internal representation of the set of contents
  * on the local peer and makes its managing transparent.
@@ -35,10 +34,26 @@ LocalContentData getContent(String c) {
 }
 
 
-void addContent(LocalContentData n) {
-  int index = Collections.binarySearch(contents, n);
-  if (index < 0) {
-    contents.add(-index - 1, n);
+int addContent(LocalContentData n) {
+  Config.addUnique(contents, n);
+  return contents.size();
+}
+
+
+void addNeighbor(Neighbor n) {
+  int c;
+  LocalContentData cd;
+  NeighborContentData nc;
+  // XXX: it should better be: for (String s : n.getContents()) {nc = n.getContent(s)}
+  for (c = 0; c < n.contents.size(); c++) {
+    nc = n.contents.get(c);
+    cd = getContent(nc.getID());
+    if (cd != null) {
+      cd.addNeighbor(n);
+      if (nc.downloads == null) {
+        nc.init();
+      }
+    }
   }
 }
 
@@ -48,6 +63,7 @@ int size() {
 }
 
 String[] getIDs() {
+  if (contents.size() == 0) return null;
   String[] res = new String[contents.size()];
   Iterator<LocalContentData> it = contents.iterator();
   for (int i = 0; it.hasNext(); i++) {
