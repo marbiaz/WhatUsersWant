@@ -59,7 +59,8 @@ public Transaction[] giveContentUpdates() {
     trans[i].setStartTimestamp(System.currentTimeMillis() - 5000);
     trans[i].setEndTimestamp(System.currentTimeMillis());
     trans[i].setType(Config.rand.nextBoolean() ? Type.IN : Type.OUT);
-    trans[i].setState((Config.rand.nextDouble() < 0.3) ? State.DONE : State.ON);
+    trans[i].setState((Config.rand.nextDouble() < 0.3) ? State.DONE :
+        (Config.rand.nextDouble() < 0.3) ? State.WRONG : State.ON);
   }
   // return a random number (between 2 and 20) of transactions
   Transaction[] res, r = Arrays.copyOfRange(trans, Config.rand.nextInt(7),
@@ -76,7 +77,7 @@ public Transaction[] giveContentUpdates() {
  * @see wuw.pi.PIHandler#getPeers(wuw.core.PeerID[])
  */
 @Override
-public void getPeers(PeerID[] peers) {
+public void getPeers(String content, PeerID[] peers) {
   this.peers = peers;
 }
 

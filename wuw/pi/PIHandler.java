@@ -25,7 +25,10 @@ public Transaction[] giveContentUpdates();
 
 /**
  * Get peers from WUW core and make them available to the P2P application, updating its local neighborhood.
+ *
+ * @param contentID The ID of the content which the peer list must be associated to.
+ * @param peers The pere list for the given content.
  */
-public void getPeers(PeerID[] peers);
+public void getPeers(String contentID, PeerID[] peers);
 
 }

@@ -2,6 +2,8 @@
 
 package wuw.pi;
 
+//import java.util.Comparator;
+
 import wuw.core.PeerID;
 
 
@@ -30,6 +32,23 @@ public static enum Type {
   IN, OUT
 };
 
+//public static final Comparator<Transaction> altComparator;
+
+//static {
+//  altComparator = new Comparator<Transaction>() {
+//    public int compare(Transaction t1, Transaction t2) {
+//      int res = t1.item - t2.item;
+//      if (res == 0) {
+//        res = t1.state.ordinal() - t2.state.ordinal();
+//      }
+//      if (res == 0) {
+//        res = t1.remote.compareTo(t2.remote);
+//      }
+//      return res;
+//    }
+//  };
+//}
+
 private String contentID;
 private State state;
 private Type type;
@@ -41,7 +60,7 @@ private double actualBandwidth;
 private double maxBandwidth;
 
 
-Transaction() {}
+public Transaction() {}
 
 
 /**
@@ -206,7 +225,7 @@ public String toString() {
       + "\nState : " + state + " -- Type : " + type + " -- Item : " + item
       + "\nStarted at : " + startTimestamp
       + " -- Ended at : " + endTimestamp + "\nBandwidth : " + actualBandwidth
-      + " over " + maxBandwidth + "\n----------\n";
+      + " over " + maxBandwidth + "\n----------";
   return res;
 }
 
@@ -228,9 +247,9 @@ public int compareTo(Transaction t) {
   if (res == 0) {
     res = this.state.ordinal() - t.state.ordinal();
   }
-  if (res == 0) { // FIXME: check if this makes sense...
-    res = (int)(this.endTimestamp - t.endTimestamp);
-  }
+//  if (res == 0) { // FIXME: check if this makes sense...
+//    res = (int)(this.endTimestamp - t.endTimestamp);
+//  }
   return res;
 }
 
