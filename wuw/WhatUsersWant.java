@@ -4,7 +4,6 @@ package wuw;
 
 
 import wuw.core.Config;
-import wuw.core.ContentData;
 import wuw.core.ContentData.Category;
 import wuw.core.ContentData.Interest;
 import wuw.core.PeerID;
@@ -17,6 +16,7 @@ import wuw.core.PeerID;
  * @date 2012 Jan 16
  */
 public class WhatUsersWant {
+
 
 /**
  * Main function.
@@ -35,7 +35,7 @@ public static void main(String[] args) throws InterruptedException {
   }
 
   long start = System.currentTimeMillis();
-  int duration = 20 * 1000;
+  int duration = 120 * 1000;
   // TestTMsg.transportTest(args[args.length - 1]);
   TestOverlayConnection(args[args.length - 1]);
   while ((System.currentTimeMillis() - start) < duration) {
@@ -61,11 +61,24 @@ public static void main(String[] args) throws InterruptedException {
 /**************************** DEBUG UTILITIES ********************************/
 
 static public void TestOverlayConnection(String path) throws InterruptedException {
-  PeerID[] neighs = Config.readPeerList(path, true);
+  int first, f = 0, last, l = 0, middle;
+  PeerID[] curr, neighs = Config.readPeerList(path, true);
+  middle = neighs.length / 2;
+  if (neighs.length % 2 == 0) {
+    f--;
+  } else {
+    l++;
+  }
   for (int i = 0; i < 20; i++) {
-    Config.getLocalPeer().addContent("Content" + i, 10, Category.MOVIES, Interest.PRIMARY, neighs);
+    first = f + middle - Config.rand.nextInt(middle);
+    last = l + middle + Config.rand.nextInt(middle);
+    curr = new PeerID[last - first + 1];
+    System.arraycopy(neighs, first, curr, 0, curr.length);
+    Config.getLocalPeer().addContent("Content" + i, 10, Category.MOVIES, Interest.PRIMARY, curr);
     Thread.sleep(10);
   }
+  System.out.println(Config.printArray(Config.getLocalPeer().getContents()));
+  System.out.println(Config.printArray(Config.getLocalPeer().getNeighborhood()));
 }
 
 }
