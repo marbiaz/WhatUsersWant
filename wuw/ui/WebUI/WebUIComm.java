@@ -1,10 +1,12 @@
 
 
-package wuw.ui;
+package wuw.ui.WebUI;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import wuw.ui.UIHandler;
 
 
 /**
@@ -110,15 +112,13 @@ public void Connection() {
  *          is the id content
  */
 public void CreateContent(String idContent) {
-  String[] measures = { "Satisfaction", "Adequation", "System Evaluation" };
-  double[] values = { 0, 0, 0 };
   Integer[] val_a = { 100, 500, 700 };
   String[] val_b = { "false", "true" };
   handler.initPref(idContent, new String("Preference1"), 1.0, 3.0, 0.5, 2.0);
   handler.initPref(idContent, new String("Preference2"), (Object[])val_a, (Object)val_a[2]);
   handler.initPref(idContent, new String("Preference3"), 3.0, 5.0, 0.1, 4.9);
   handler.initPref(idContent, new String("Preference4"), (Object[])val_b, true);
-  handler.initFeedback(idContent, measures, values);
+  handler.initFeedback(idContent, UIHandler.feedback_measures, UIHandler.feedback_defaults);
 }
 
 

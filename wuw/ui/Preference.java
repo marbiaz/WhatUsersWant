@@ -19,7 +19,7 @@ private final Object defaultValue;
 private final double start;
 private final double end;
 private final double step;
-private final Object[] values; // FIXME: the values in the array are not final!
+private final Object[] values;
 
 
 /**

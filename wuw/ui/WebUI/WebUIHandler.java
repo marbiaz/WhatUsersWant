@@ -1,6 +1,6 @@
 
 
-package wuw.ui;
+package wuw.ui.WebUI;
 
 
 import java.util.Iterator;
@@ -8,6 +8,9 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Set;
+
+import wuw.ui.Preference;
+import wuw.ui.UIHandler;
 
 
 /**
@@ -30,17 +33,6 @@ LinkedHashMap<String, Feedback> feedback;
 public WebUIHandler() {
   preferences = new LinkedHashMap<String, LinkedList<Preference>>();
   feedback = new LinkedHashMap<String, Feedback>();
-}
-
-
-private LinkedList<Preference> getContents(String contentID) {
-  if (!preferences.containsKey(contentID)) {
-    LinkedList<Preference> list = null;
-    list = new LinkedList<Preference>();
-    preferences.put(contentID, list);
-    return list;
-  }
-  return preferences.get(contentID);
 }
 
 
@@ -90,6 +82,7 @@ public void setPref(String contentID, String pref, Object value) {
   } else {
 /**/System.err.println("WebUIHandler : ERROR : attempting to set a preference in an"
         + " uninitialized preference list (content ID = " + contentID + ")!!!");
+    System.err.flush();
   }
 
 }
@@ -116,6 +109,7 @@ public Object getPrefValue(String contentID, String pref) {
   } else {
 /**/System.err.println("WebUIHandler : ERROR : attempting to get a value from an"
         + " uninitialized preference list (content ID = " + contentID + ")!!!");
+    System.err.flush();
     return null;
   }
 }
@@ -131,7 +125,8 @@ public void initFeedback(String contentID, String[] measures, double[] values) {
     Feedback instance = new Feedback(measures, values);
     feedback.put(contentID, instance);
   } else {
-    System.err.println("WebUIHandler : ERROR : the array don't have the same length!!!");
+    System.err.println("WebUIHandler : ERROR while intitializing feedback : arguments size mismatch.");
+    System.err.flush();
   }
 }
 
@@ -142,30 +137,22 @@ public void initFeedback(String contentID, String[] measures, double[] values) {
  * @see UIHandler#setFeedback(java.lang.String, double)
  */
 public void setFeedback(String contentID, String measure, double value) {
-  if (existFeedback(contentID)) {
+  if (feedback.containsKey(contentID)) {
     Feedback aux;
     aux = feedback.get(contentID);
     if (aux.existMeasure(measure) != -1) {
       aux.setValue(aux.existMeasure(measure), value);
     } else {
-      System.err.println("WebUIHandler : ERROR : attempting set an"
+      System.err.println("WebUIHandler : ERROR : attempting to set an"
           + " uninitialized measure (measure = " + measure + ")!!!");
+      System.err.flush();
     }
   } else {
     System.err.println("WebUIHandler : ERROR : attempting to set in an"
         + " uninitialized Feedback (content ID = " + contentID + ")!!!");
+    System.err.flush();
   }
 
-}
-
-
-/**
- * @param ID
- *          Id of the Content
- * @return true if this LinkedHashMap contains a element with the key = ID
- */
-public boolean existFeedback(String ID) {
-  return feedback.containsKey(ID);
 }
 
 
@@ -208,7 +195,7 @@ public boolean existFeedback(String ID) {
  *         that it can set to, valueDefault each data is separate for the
  *         character "&"
  */
-public String getPreferences(String contentID) {
+String getPreferences(String contentID) {
   LinkedList<Preference> list = preferences.get(contentID);
   if (list != null) {
     ListIterator<Preference> itr = list.listIterator();
@@ -243,7 +230,7 @@ public String getPreferences(String contentID) {
  * 
  * @param contentID
  */
-public void reset(String contentID) {
+void reset(String contentID) {
   LinkedList<Preference> list = preferences.get(contentID);
   if (list != null) {
     ListIterator<Preference> itr = list.listIterator();
@@ -263,7 +250,7 @@ public void reset(String contentID) {
  * Display the list of Preferences of one Content print the name of preferences,
  * its default value and its value set up.
  */
-public void displayPreferences(String contentID) {
+void displayPreferences(String contentID) {
   LinkedList<Preference> list = preferences.get(contentID);
   if (list != null) {
     ListIterator<Preference> itr = list.listIterator();
@@ -280,30 +267,29 @@ public void displayPreferences(String contentID) {
 }
 
 
-/**
- * @param id
- *          Id of the content
- * @param preferenceList
- *          List of preferences associated to a content
- */
-public void AddContent(String id, LinkedList<Preference> prefList) {
-  // FIXME : overrides previous list without notifying...
-  preferences.put(id, prefList);
-}
+///**
+// * @param id
+// *          Id of the content
+// * @param preferenceList
+// *          List of preferences associated to a content
+// */
+//void addContent(String id, LinkedList<Preference> prefList) {
+//  // FIXME : overrides previous list without notifying...
+//  preferences.put(id, prefList);
+//}
 
 
 /**
  * @param ID
  *          Identifier of the content to remove
  */
-public void removeContent(String ID) {
-  // FIXME: after this, containskey(ID) = true, and getValue(ID) = null
+void removeContent(String ID) {
   preferences.remove(ID);
   feedback.remove(ID);
 }
 
 
-public void removeAll() {
+void removeAll() {
   if (!preferences.isEmpty()) {
     preferences.clear();
   }
@@ -316,7 +302,7 @@ public void removeAll() {
 /**
  * Show the id of the contents in the list
  */
-public void displayContent() {
+void displayContent() {
   Set<String> keys = preferences.keySet();
   System.out.println("List of Content");
   if (keys.isEmpty()) {
@@ -335,7 +321,7 @@ public void displayContent() {
  *          Identifier of the content
  * @return true if the content exist in the list false if don't exist
  */
-public boolean existContent(String ID) {
+boolean existContent(String ID) {
   return preferences.containsKey(ID) && feedback.containsKey(ID);
 }
 
@@ -344,11 +330,22 @@ public boolean existContent(String ID) {
  * @param idContent
  *          Id of Content
  */
-public String getFeeback(String idContent) {
+String getFeeback(String idContent) {
   String FeedBack = idContent;
   Feedback aux = feedback.get(idContent);
   FeedBack = FeedBack + aux.getMeasure();
   return FeedBack;
+}
+
+
+private LinkedList<Preference> getContents(String contentID) {
+  if (!preferences.containsKey(contentID)) {
+    LinkedList<Preference> list = null;
+    list = new LinkedList<Preference>();
+    preferences.put(contentID, list);
+    return list;
+  }
+  return preferences.get(contentID);
 }
 
 }

@@ -1,6 +1,6 @@
 
 
-package wuw.ui;
+package wuw.ui.WebUI;
 
 
 /**
@@ -10,19 +10,19 @@ package wuw.ui;
  * @author Adriana Perez-Espinosa
  * @date 2012 Mar 23
  */
-public class Feedback {
+class Feedback {
 
-public String[] measures;
-public double[] values;
+String[] measures;
+double[] values;
 
 
-public Feedback(String[] measure, double[] values) {
+Feedback(String[] measure, double[] values) {
   this.measures = measure;
   this.values = values;
 }
 
 
-public int existMeasure(String measure) {// FIXME: 
+int existMeasure(String measure) {
   for (int i = 0; i < measures.length; i++) {
     if (measures[i].equals(measure)) {
       return i;
@@ -32,12 +32,12 @@ public int existMeasure(String measure) {// FIXME:
 }
 
 
-public void setValue(int index, double value) { //FIXME: do not expose index!!! search by measure name...
+void setValue(int index, double value) {
   values[index] = value;
 }
 
 
-public String getMeasure() { //FIXME: this should be in WebUIHandler or WebUIComm....
+String getMeasure() {
   String feedback = "";
   for (int i = 0; i < measures.length; i++) {
     feedback = feedback + "&" + measures[i] + "&" + values[i];
