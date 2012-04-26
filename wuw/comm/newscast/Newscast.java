@@ -155,16 +155,17 @@ public void sendCard(Object descriptor, PeerID dest) {
       mid = tProt.addMsgHandler(this);
     } else {
       System.err.println("Newscast : ERROR : addMsgHandler was attempted twice!!!");
+      System.err.flush();
     }
   }
   if (dest == null) {
     System.err.println("Newscast : ERROR : null destination while sending local peer's card.");
+    System.err.flush();
     return;
   }
   NCCacheEntry[] localCache = new NCCacheEntry[1];
   localCache[0] = new NCCacheEntry(localNodeID, descriptor);
-  send(dest, localCache, false);//XXX:  change to 'true' to avoid a double exchange
-                                //      when both local peer and dest are newcomers
+  send(dest, localCache, false);
 }
 
 
