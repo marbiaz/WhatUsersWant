@@ -12,7 +12,6 @@ import wuw.comm.TCPProtocol;
 import wuw.comm.UDPProtocol;
 import wuw.comm.newscast.Newscast;
 import wuw.pi.PIHandler;
-import wuw.pi.PIStub;
 import wuw.ui.UIHandler;
 import wuw.ui.WebUI.WebUIHandler;
 
@@ -85,10 +84,10 @@ static public boolean set(String[] args) {
   CommHandler com = args[2].equalsIgnoreCase("TCP") ? new TCPProtocol(pid) : new UDPProtocol(pid);
   Newscast news = new Newscast(null); // TODO: get parameters to newscast!
   UIHandler ui = new WebUIHandler(); // TODO: write a decent configuration....
-  PIHandler pi = new wuw.pi.BT.BTHandler(); //PIStub(); // TODO: write a decent pi configuration....
+  PIHandler pi = new wuw.pi.BT.BTHandler(); //wuw.pi.PIStub(); // TODO: write a decent pi configuration....
 
   localPeer = new Peer(pid, com, ui, pi, news);
-  pi.getPeers(null, readPeerList(args[args.length - 1], false)); // FIXME: to avoid crash on testing
+  //pi.getPeers(null, readPeerList(args[args.length - 1], false)); // FIXME: to avoid crash on testing
 
   return true;
 }

@@ -29,15 +29,18 @@ public static void main(String[] args) throws InterruptedException {
 
 
   System.setProperty("java.net.preferIPv4Stack", "true");
+  System.setProperty("file.encoding", "UTF-8");
   boolean go = Config.set(args);
   if (!go) {
     System.exit(1);
   }
 
   long start = System.currentTimeMillis();
-  int duration = 120 * 1000;
+  int duration = 7200 * 1000;
   // TestTMsg.transportTest(args[args.length - 1]);
-  TestOverlayConnection(args[args.length - 1]);
+  //TestOverlayConnection(args[args.length - 1]);
+  PeerID[] neighs = Config.readPeerList(args[args.length - 1], true);
+  Config.getLocalPeer().addContent("eclipse.tar.gz", 429, Category.MOVIES, Interest.PRIMARY, neighs);
   while ((System.currentTimeMillis() - start) < duration) {
     try {
       Thread.sleep(duration);
@@ -48,11 +51,11 @@ public static void main(String[] args) throws InterruptedException {
       System.err.println("Main : going back to sleep...");
     }
   }
-/**/// if (Config.printLogs) {
+/**/ if (Config.printLogs) {
   System.out.println("My contents :\n" + Config.printArray(Config.getLocalPeer().getContents()));
   System.out.println("\nCurrent Neighborhood :\n"
       + Config.printArray(Config.getLocalPeer().getNeighborhood()));
-  // }
+   }
   System.out.println("WUW execution happily ends here.");
   System.exit(0);
 }

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
+import wuw.core.PeerID;
 import wuw.pi.Transaction;
 
 
@@ -210,6 +211,8 @@ Transaction[] decodeTransactions(String value, int size) {
     tran.setState(identifyTransactionState(state));
     tran.setType(identifyTransactionType(type));
     tran.setItem(pieceNumber);
+    tran.setContentID(this.contentId); // FIXME: check the contentID string !!! "eclipse.tar.gz"
+    tran.setRemote(new PeerID("172.16.9.60", 15002)); // FIXME: handle PeerID!!!!
     // tran.setkBprovided(kBprovided);
     transactions[i] = tran;
     i++;
@@ -253,7 +256,7 @@ private PieceDownTime[] decodeDowPiecesTimes() {
   int j;
   String str3tuple, item;
   Scanner tupleDecoder;
-  Scanner decoder = new Scanner(downPiecesValuesStr).useDelimiter("\\[\\(|\\)\\,\\s\\(|\\)\\]");
+  Scanner decoder = new Scanner(downPiecesValuesStr).useDelimiter("\\[\\]|\\[\\(|\\)\\,\\s\\(|\\)\\]");
   while (decoder.hasNext()) {
     str3tuple = decoder.next();
     tupleDecoder = new Scanner(str3tuple).useDelimiter(Pattern.compile("\\,\\s"));

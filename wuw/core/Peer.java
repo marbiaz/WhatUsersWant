@@ -146,7 +146,7 @@ Peer(PeerID p, CommHandler t, UIHandler ui, PIHandler pi, Newscast n) {
   dLock = new Object();
   myDescriptor = new PeerDescriptor();
 
-  computer = new Timer(2000, new ActionListener() {
+  computer = new Timer(5000, new ActionListener() {
 
     public void actionPerformed(ActionEvent e) {
       if (contents > 0) doTheMagic();
@@ -390,7 +390,7 @@ private void doTheMagic() {
   Transaction[] newTrans = pi.giveContentUpdates();
   if (newTrans == null) {
     newTrans = new Transaction[0];
-  } else {
+  } else if (newTrans.length > 1) {
     Arrays.sort(newTrans);
   }
 /**/if (printLogs) {
@@ -509,11 +509,11 @@ private void doTheMagic() {
 /**/System.err.println("Peer: ATTENTION: local peer's card not sent due to previous errors.");
     System.err.flush();
   }
-/**/if (printLogs) {
+/**///if (printLogs) {
     System.out.println("My Contents :\n" + Config.printArray(myContents.toArray()));
     System.out
         .println("Current Neighborhood :\n" + Config.printArray(globalNeighborhood.toArray()));
-  }
+  //}
 }
 
 
