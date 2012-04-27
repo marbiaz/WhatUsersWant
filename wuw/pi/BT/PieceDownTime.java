@@ -1,31 +1,31 @@
 package wuw.pi.BT;
 
 
-public class PieceDowTime {
+class PieceDownTime {
 
 private int piece;
 private float startDownTime;
 private float endDownTime;
 
 
-public PieceDowTime(int piece, float startDownTime, float endDownTime) {
+PieceDownTime(int piece, float startDownTime, float endDownTime) {
   this.piece = piece;
   this.startDownTime = startDownTime;
   this.endDownTime = endDownTime;
 }
 
 
-public int getPiece() {
+int getPiece() {
   return piece;
 }
 
 
-public float getStartDownTime() {
+float getStartDownTime() {
   return startDownTime;
 }
 
 
-public float getEndDownTime() {
+float getEndDownTime() {
   return endDownTime;
 }
 

@@ -17,7 +17,7 @@ import wuw.pi.Transaction;
  * @author gomez-r
  * @version 1.0
  */
-public class BitTorrentStatistics {
+class BitTorrentStatistics {
 
 /*
  * These attributes are useful for decode process.
@@ -40,7 +40,7 @@ private float seconds;
 private String contentId = null;
 private int downPiecesSize;
 private String downPiecesValuesStr = null;
-private PieceDowTime[] dowPiecesTimes = null;
+private PieceDownTime[] dowPiecesTimes = null;
 private HashMap<String, BitTorrentRequest> bTstatistics = new HashMap<String, BitTorrentRequest>();
 
 
@@ -50,7 +50,7 @@ private HashMap<String, BitTorrentRequest> bTstatistics = new HashMap<String, Bi
  * @param source
  *          String representation of the Python dictionary
  */
-public BitTorrentStatistics(String source) {
+BitTorrentStatistics(String source) {
   /*
    * Scanner class with the specified delimiter lets to get an easy handle way
    * for keys and values in the Python dictionary.
@@ -92,7 +92,7 @@ public BitTorrentStatistics(String source) {
 }
 
 
-private boolean hasExpectFormat(String key) {
+boolean hasExpectFormat(String key) {
   String[] valuesInKey = key.split("\\_");
   if (valuesInKey.length != 7) {
     System.out.println("The number of values in key is incorrect");
@@ -138,7 +138,7 @@ private boolean hasExpectFormat(String key) {
 }
 
 
-private void decodeBitTorrentReqs(String key, String value) {
+void decodeBitTorrentReqs(String key, String value) {
   String[] valuesInKey = key.split("\\_");
   String ipAddress = valuesInKey[0];
   String bitTorrentId = valuesInKey[1];
@@ -161,7 +161,7 @@ private void decodeBitTorrentReqs(String key, String value) {
 }
 
 
-private Transaction[] decodeTransactions(String value, int size) {
+Transaction[] decodeTransactions(String value, int size) {
   String tranRegExpr = "\\[(\\((((\\d)*\\.(\\d)*|\\'[A-Z]*\\'|(\\d)*)\\,\\s)*((\\d)*"
       + "\\.(\\d)*|\\'[A-Z]*\\'|(\\d)*)\\)\\,\\s)*\\((((\\d)*\\.(\\d)*|\\'[A-Z]*\\'"
       + "|(\\d)*)\\,\\s)*((\\d)*\\.(\\d)*|\\'[A-Z]*\\'|(\\d)*)\\)\\]";
@@ -219,7 +219,7 @@ private Transaction[] decodeTransactions(String value, int size) {
 }
 
 
-private Transaction.State identifyTransactionState(String state) {
+Transaction.State identifyTransactionState(String state) {
   if (state.equals("'" + Transaction.State.DONE.toString() + "'")) return Transaction.State.DONE;
   if (state.equals("'" + Transaction.State.ON.toString() + "'")) return Transaction.State.ON;
   if (state.equals("'" + Transaction.State.WRONG.toString() + "'")) return Transaction.State.WRONG;
@@ -229,7 +229,7 @@ private Transaction.State identifyTransactionState(String state) {
 }
 
 
-private Transaction.Type identifyTransactionType(String type) {
+Transaction.Type identifyTransactionType(String type) {
   if (type.equals("'" + Transaction.Type.IN.toString() + "'")) return Transaction.Type.IN;
   if (type.equals("'" + Transaction.Type.OUT.toString() + "'")) return Transaction.Type.OUT;
   System.out.println("Transaction type not recognized");
@@ -238,7 +238,7 @@ private Transaction.Type identifyTransactionType(String type) {
 }
 
 
-private PieceDowTime[] decodeDowPiecesTimes() {
+private PieceDownTime[] decodeDowPiecesTimes() {
   // String expecTuplRegExp =
   // "\\[(\\((((\\d)*|(\\d)*\\.(\\d)*|None)\\,\\s)*((\\d)*|(\\d)*\\.(\\d)*" +
   // "|None)\\)\\,\\s)*(\\((((\\d)*|(\\d)*\\.(\\d)*|None)\\,\\s)*((\\d)*|(\\d)*\\."
@@ -248,7 +248,7 @@ private PieceDowTime[] decodeDowPiecesTimes() {
   // System.out.println("This tuple (start-down piecestimes) has a not expected value");
   // System.exit(1);
   // }
-  PieceDowTime[] downPiecesTimes = new PieceDowTime[downPiecesSize];
+  PieceDownTime[] downPiecesTimes = new PieceDownTime[downPiecesSize];
   int i = 0;
   int j;
   String str3tuple, item;
@@ -288,7 +288,7 @@ private PieceDowTime[] decodeDowPiecesTimes() {
       j++;
     }
     tupleDecoder.close();
-    downPiecesTimes[i] = new PieceDowTime(piece, startTime, endTime);
+    downPiecesTimes[i] = new PieceDownTime(piece, startTime, endTime);
     i++;
   }
   decoder.close();
@@ -296,22 +296,22 @@ private PieceDowTime[] decodeDowPiecesTimes() {
 }
 
 
-public float getSeconds() {
+float getSeconds() {
   return seconds;
 }
 
 
-public String getContentId() {
+String getContentId() {
   return contentId;
 }
 
 
-public PieceDowTime[] getDowPiecesTimes() {
+PieceDownTime[] getDowPiecesTimes() {
   return dowPiecesTimes;
 }
 
 
-public HashMap<String, BitTorrentRequest> getbTstatistics() {
+HashMap<String, BitTorrentRequest> getbTstatistics() {
   return bTstatistics;
 }
 

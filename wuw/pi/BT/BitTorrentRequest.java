@@ -5,7 +5,7 @@ package wuw.pi.BT;
 import wuw.pi.Transaction;
 
 
-public class BitTorrentRequest {
+class BitTorrentRequest {
 
 private String ipAddr = null;
 private String bitTorrentId = null;
@@ -16,75 +16,75 @@ private float maxDowBandwidth;
 private Transaction[] transactions = null;
 
 
-public BitTorrentRequest() {}
+BitTorrentRequest() {}
 
 
-public String getIpAddr() {
+String getIpAddr() {
   return ipAddr;
 }
 
 
-public void setIpAddr(String ipAddr) {
+void setIpAddr(String ipAddr) {
   this.ipAddr = ipAddr;
 }
 
 
-public String getBitTorrentId() {
+String getBitTorrentId() {
   return bitTorrentId;
 }
 
 
-public void setBitTorrentId(String bitTorrentId) {
+void setBitTorrentId(String bitTorrentId) {
   this.bitTorrentId = bitTorrentId;
 }
 
 
-public float getCurrentUplBandwidth() {
+float getCurrentUplBandwidth() {
   return currentUplBandwidth;
 }
 
 
-public void setCurrentUplBandwidth(float currentUplBandwidth) {
+void setCurrentUplBandwidth(float currentUplBandwidth) {
   this.currentUplBandwidth = currentUplBandwidth;
 }
 
 
-public float getCurrentDowBandwidth() {
+float getCurrentDowBandwidth() {
   return currentDowBandwidth;
 }
 
 
-public void setCurrentDowBandwidth(float currentDowBandwidth) {
+void setCurrentDowBandwidth(float currentDowBandwidth) {
   this.currentDowBandwidth = currentDowBandwidth;
 }
 
 
-public float getMaxUplBandwidth() {
+float getMaxUplBandwidth() {
   return maxUplBandwidth;
 }
 
 
-public void setMaxUplBandwidth(float maxUplBandwidth) {
+void setMaxUplBandwidth(float maxUplBandwidth) {
   this.maxUplBandwidth = maxUplBandwidth;
 }
 
 
-public float getMaxDowBandwidth() {
+float getMaxDowBandwidth() {
   return maxDowBandwidth;
 }
 
 
-public void setMaxDowBandwidth(float maxDowBandwidth) {
+void setMaxDowBandwidth(float maxDowBandwidth) {
   this.maxDowBandwidth = maxDowBandwidth;
 }
 
 
-public Transaction[] getTransactions() {
+Transaction[] getTransactions() {
   return transactions;
 }
 
 
-public void setTransactions(Transaction[] transactions) {
+void setTransactions(Transaction[] transactions) {
   this.transactions = transactions;
 }
 
