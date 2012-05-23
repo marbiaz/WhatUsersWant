@@ -11,7 +11,6 @@ import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import wuw.comm.CommHandler;
 import wuw.comm.newscast.Newscast;
@@ -116,12 +115,12 @@ private final Newscast epidemic;
 final PeerID localID;
 private final ContentBasket myContents;
 private final Neighborhood globalNeighborhood;
-private LinkedBlockingQueue<PeerDescriptor> epidemicUpdates;
+private ArrayList<PeerDescriptor> epidemicUpdates;
 private Timer computer;
 private int contents;
 private final Object updateLock, dLock;
 private PeerDescriptor myDescriptor;
-
+private static Logger logger = Logger.getInstance();
 
 /*
  * Standard constructor. It should not be called but by the {@link
@@ -140,13 +139,13 @@ Peer(PeerID p, CommHandler t, UIHandler ui, PIHandler pi, Newscast n) {
   this.pi = pi;
   myContents = new ContentBasket();
   globalNeighborhood = new Neighborhood();
-  epidemicUpdates = new LinkedBlockingQueue<PeerDescriptor>(100);
+  epidemicUpdates = new ArrayList<PeerDescriptor>(50);
   printLogs = Config.printLogs;
   updateLock = new Object();
   dLock = new Object();
   myDescriptor = new PeerDescriptor();
 
-  computer = new Timer(5000, new ActionListener() {
+  computer = new Timer(8000, new ActionListener() {
 
     public void actionPerformed(ActionEvent e) {
       if (contents > 0) doTheMagic();
@@ -235,6 +234,8 @@ public boolean addContent(String id, int items, Category cat, Interest interest,
       c.init(neighs);
       makeDescriptor();
       // XXX: the first time, all peers are given to the P2P application
+      // FIXME: this is not needed anymore because fake tracker will sent to local BT client the
+      // peer list provided by the real tracker (first time in XXX means first announce message )
       pi.getPeers(c.ID, peerList);
     }
   }
@@ -263,18 +264,18 @@ public boolean addContent(String id, int items, Category cat, Interest interest,
  *          Descriptors to get
  */
 public void getEpidemicUpdates(Object upd[]) {
-  int i = 0;
-  boolean ok, clog = false;
-  while (i < upd.length) {
-    ok = epidemicUpdates.offer((PeerDescriptor)upd[i]);
-    if (ok)
-      i++;
-    else
-      clog = true;
-  }
-  if (clog) {
-/**/System.err.println("Peer: ATTENTION: Epidemic updates queue congestion!");
-    System.err.flush();
+	int indx, i = 0;
+	PeerDescriptor  pd;
+	synchronized (epidemicUpdates) {
+		for (i = 0; i < upd.length; i++) {
+			pd = (PeerDescriptor)upd[i];
+			indx = Collections.binarySearch(epidemicUpdates, pd);
+			if (indx >= 0 && epidemicUpdates.get(indx).getVersion() < pd.getVersion()) {
+				epidemicUpdates.set(indx, pd);
+			} else if (indx < 0) {
+				epidemicUpdates.add(-indx - 1, pd);
+			}
+		}
   }
 /**/if (printLogs) {
     System.out.println("Peer : The epidemic updates queue currently contains "
@@ -374,17 +375,12 @@ private void doTheMagic() {
 
   int i, j, c, dl, tl;
   String conts[];
-
-  ArrayList<PeerDescriptor> newDescriptors = new ArrayList<PeerDescriptor>();
-  epidemicUpdates.drainTo(newDescriptors);
-  Collections.sort(newDescriptors); // stable sort
-  for (i = 0; i < newDescriptors.size();) { // get rid of duplicates
-    j = newDescriptors.lastIndexOf(newDescriptors.get(i));
-    if (i != j) {
-      newDescriptors.remove(i);
-    } else {
-      i++;
-    }
+  long lastTime, actuTime;
+  lastTime = System.currentTimeMillis();
+  PeerDescriptor[] newDescriptors = new PeerDescriptor[0];
+  synchronized (epidemicUpdates) {
+	  newDescriptors = epidemicUpdates.toArray(newDescriptors);
+	  epidemicUpdates.clear();
   }
 
   Transaction[] newTrans = pi.giveContentUpdates();
@@ -410,7 +406,7 @@ private void doTheMagic() {
   i = 0;
   j = 0;
   n = null;
-  dl = newDescriptors.size();
+  dl = newDescriptors.length;
   tl = newTrans.length;
   goT = tl > 0;
   goD = dl > 0;
@@ -420,24 +416,22 @@ private void doTheMagic() {
     while (goD || goT) {
       updated = false;
       newBuddy = false;
-      pd = goD ? newDescriptors.get(i) : pd;
+      pd = goD ? newDescriptors[i] : pd;
       t = goT ? newTrans[j] : t;
       c = goD ? goT ? pd.getPeerID().compareTo(t.getRemote()) : -1 : 1;
       nowD = c <= 0; // !goT || (goD && c <= 0);
       if (nowD) {
         id = pd.getPeerID();
-        if ((i + 1) < dl) {
+        if ((i + 1) < dl)
           i++;
-        } else {
+        else
           goD = false;
-        }
       } else { // if goT && (!goD || c > 0)
         id = t.getRemote();
-        if ((j + 1) < tl) {
+        if ((j + 1) < tl)
           j++;
-        } else {
+        else
           goT = false;
-        }
       }
       if (n == null || !n.ID.equals(id)) {
         n = globalNeighborhood.getNeighbor(id);
@@ -501,6 +495,7 @@ private void doTheMagic() {
     buildGlobalRanking();
     makeDescriptor();
   }
+  actuTime = System.currentTimeMillis();
   if (myDescriptor.isValid()) {
     for (i = 0; i < newNeighs.size(); i++) {
       this.epidemic.sendCard(myDescriptor, newNeighs.get(i));
@@ -509,6 +504,18 @@ private void doTheMagic() {
 /**/System.err.println("Peer: ATTENTION: local peer's card not sent due to previous errors.");
     System.err.flush();
   }
+  logger.updateLogLine(String.valueOf(actuTime - lastTime) + " ");
+  String[] contentIds = myContents.getIDs();
+  String contInfo = "";
+  LocalContentData actCont = null;
+  for(int k = 0; k < contentIds.length; k++){
+	  actCont = myContents.getContent(contentIds[k]);
+	  contInfo = contInfo.concat(contentIds[k] + " ");
+	  contInfo = contInfo.concat(actCont.getLogString());
+  }
+  logger.updateLogLine(contInfo);
+  logger.writeCurrentLogLine();
+  logger.resetLogLine();
 /**///if (printLogs) {
     System.out.println("My Contents :\n" + Config.printArray(myContents.toArray()));
     System.out
