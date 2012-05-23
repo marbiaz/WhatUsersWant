@@ -385,4 +385,11 @@ public String toString() {
   return res;
 }
 
+public String getLogString(){
+	String res = "";
+	res = res.concat(pacAdequation + " " + pacSatisfaction + " " + pasAdequation
+			+ " " + pasSatisfaction + " " + pacSysEval + " " + pasSysEval + " ");
+	return res;
+}
+
 }
