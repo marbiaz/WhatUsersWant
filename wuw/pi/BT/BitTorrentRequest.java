@@ -15,7 +15,8 @@ private float maxUplBandwidth;
 private float maxDowBandwidth;
 private Transaction[] transactions = null;
 
-
+// TODO this object must index BT data by content ID, the current version just handle
+// one content (modify Python dictionary)
 BitTorrentRequest() {}
 
 
