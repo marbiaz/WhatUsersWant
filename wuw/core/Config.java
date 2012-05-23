@@ -1,11 +1,20 @@
 package wuw.core;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.filter.ElementFilter;
+import org.jdom.input.SAXBuilder;
 
 import wuw.comm.CommHandler;
 import wuw.comm.TCPProtocol;
@@ -26,7 +35,7 @@ import wuw.ui.WebUI.WebUIHandler;
  */
 public class Config {
 
-public static final boolean printLogs = false;
+public static final boolean printLogs = true;
 
 static final String usageString = "For a correct execution, the following arguments are needed, in the given order :\n"
     + "    -- The IPv4 address to be used by this instance of WUW.\n"
@@ -44,6 +53,12 @@ static public Random rand = null;
  */
 static private Peer localPeer = null;
 
+/**
+ * PVO
+ * @author gomez-r
+ */
+@SuppressWarnings("rawtypes")
+private static Map configParam;
 
 /**
  * @return The local peer.
@@ -51,7 +66,6 @@ static private Peer localPeer = null;
 static public Peer getLocalPeer() {
   return localPeer;
 }
-
 
 /**
  * This method must be called exactly once to initialize WUW. Any further
@@ -77,16 +91,17 @@ static public boolean set(String[] args) {
     usage();
     return false;
   }
-
+ 
   rand = new Random(System.currentTimeMillis());
   int localPort = Integer.valueOf(args[1]);
   PeerID pid = new PeerID(args[0], localPort);
   CommHandler com = args[2].equalsIgnoreCase("TCP") ? new TCPProtocol(pid) : new UDPProtocol(pid);
   Newscast news = new Newscast(null); // TODO: get parameters to newscast!
   UIHandler ui = new WebUIHandler(); // TODO: write a decent configuration....
-  PIHandler pi = new wuw.pi.BT.BTHandler(); //wuw.pi.PIStub(); // TODO: write a decent pi configuration....
-
+  PIHandler pi = new wuw.pi.BT.BTHandler(readPeerList(args[args.length - 1], false)); //wuw.pi.PIStub();
+  loadConfig(args[3]);
   localPeer = new Peer(pid, com, ui, pi, news);
+
   //pi.getPeers(null, readPeerList(args[args.length - 1], false)); // FIXME: to avoid crash on testing
 
   return true;
@@ -207,5 +222,53 @@ static public String printArray(Object[] a) {
   }
   return res;
 }
+
+/**
+ * A new proposal for parameterize WUW's values from a XML file. For short (Parameterize Version
+ * One PVO) 
+ * @author gomez-r
+ */
+
+/**
+ * Load parameters from a XML file
+ *@param config the path to the XML configuration file
+ *@author gomez-r
+ */
+@SuppressWarnings({ "rawtypes", "unchecked" })
+private static void loadConfig(String config) {
+    File configFile = new File(config);
+    SAXBuilder sb = new SAXBuilder();
+    HashMap params = new HashMap();
+    if (configFile.exists())
+        try {
+            Document conf = sb.build(configFile);
+            Element root = conf.getRootElement();
+            for (Iterator it = root.getDescendants(new ElementFilter(
+                    "param"));
+                               it.hasNext(); ) {
+                Element param = (Element) it.next();
+                params.put(param.getAttribute("name").getValue(),
+                           param.getAttribute("value").getValue());
+            }
+            configParam = params;
+        } catch (Exception e) {
+            System.err.println("Error while loading parameters");
+        }
+    else {
+        System.err.println("No configuration file found...");
+        System.exit(0);
+    }
+}
+
+/**
+ * 
+ * @param param
+ * @return
+ * @author gomez-r
+ */
+public static Object get(String param) {
+    return configParam.get(param);
+}
+
 
 }
