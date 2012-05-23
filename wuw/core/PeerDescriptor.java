@@ -23,6 +23,8 @@ import java.util.zip.GZIPOutputStream;
 class PeerDescriptor implements Comparable<PeerDescriptor>, Externalizable {
 
 private PeerID ID;
+private static int latestVersion = 0;
+private int version;
 private byte[] contents;
 
 
@@ -56,9 +58,14 @@ PeerDescriptor(PeerID p, ContentData[] c) {
   }
   if (byteOs.size() > 0) {
     contents = byteOs.toByteArray();
+    version = ++latestVersion;
   } else {
     contents = new byte[0];
   }
+}
+
+int getVersion() {
+	return version;
 }
 
 
@@ -103,6 +110,7 @@ ContentData[] getContents() {
 @Override
 public void writeExternal(ObjectOutput out) throws IOException {
   ID.writeExternal(out);
+  out.writeInt(version);
   out.writeInt(contents.length);
   if (contents.length > 0) {
     out.write(contents);
@@ -120,6 +128,7 @@ public void writeExternal(ObjectOutput out) throws IOException {
 public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
   ID = new PeerID();
   ID.readExternal(in);
+  version = in.readInt();
   contents = new byte[in.readInt()];
   in.readFully(contents);
 }
