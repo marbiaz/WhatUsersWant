@@ -1,6 +1,7 @@
 package wuw.pi.BT;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
@@ -25,7 +26,6 @@ class BitTorrentStatistics {
  */
 @SuppressWarnings("serial")
 private HashMap<String, String> expectedValues = new HashMap<String, String>() {
-
   {
     put("s", "s");
     put("cid", "cid");
@@ -67,7 +67,8 @@ BitTorrentStatistics(String source) {
           seconds = Float.valueOf(value);
         }
         if (key.equals("cid")) {
-          contentId = value;
+          // Remove character "'" (Python Str type)  
+          contentId = value.substring(1, value.length() - 1);
         }
         if (key.equals("dps")) {
           downPiecesSize = Integer.valueOf(value);
@@ -211,8 +212,8 @@ Transaction[] decodeTransactions(String value, int size) {
     tran.setState(identifyTransactionState(state));
     tran.setType(identifyTransactionType(type));
     tran.setItem(pieceNumber);
-    tran.setContentID(this.contentId); // FIXME: check the contentID string !!! "eclipse.tar.gz"
-    tran.setRemote(new PeerID("172.16.9.60", 15002)); // FIXME: handle PeerID!!!!
+    // tran.setContentID("eclipse.tar.gz"); // FIXME: check the contentID string !!! "eclipse.tar.gz"
+    // tran.setRemote(new PeerID("172.16.9.60", 15002)); // FIXME: handle PeerID!!!!
     // tran.setkBprovided(kBprovided);
     transactions[i] = tran;
     i++;
@@ -316,6 +317,30 @@ PieceDownTime[] getDowPiecesTimes() {
 
 HashMap<String, BitTorrentRequest> getbTstatistics() {
   return bTstatistics;
+}
+
+public void setLeftTransactionValues(PeerID[] wuwPeerList){
+	PeerID peerId = null;
+	HashMap<String, Integer> map = new HashMap<String, Integer>();
+	int sizeList = wuwPeerList.length;
+	for(int i = 0; i < sizeList; i++){
+		peerId = wuwPeerList[i];
+		map.put(peerId.getIP().getHostAddress(), peerId.getPort());
+	}
+	Iterator<BitTorrentRequest> values = bTstatistics.values().iterator();
+	BitTorrentRequest btReq = null;
+	String ipAddr = null;
+	int port, tranSize;
+	while(values.hasNext()){
+		btReq = values.next();
+		ipAddr = btReq.getIpAddr();
+		port = map.get(ipAddr);
+		tranSize = btReq.getTransactions().length;
+		for(int i = 0; i < tranSize; i++){
+			btReq.getTransactions()[i].setContentID(contentId);
+			btReq.getTransactions()[i].setRemote(new PeerID(ipAddr, port));
+		}
+	}
 }
 
 }
