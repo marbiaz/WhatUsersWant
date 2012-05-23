@@ -270,6 +270,7 @@ private LinkedList<Integer> mergeCaches(NCCacheEntry[] reCache) {
   int recSize = reCache.length;
   int i = 0, localIndex = 0, recIndex = 0;
   LinkedList<Integer> newEntries = new LinkedList<Integer>();
+  boolean isFirst;
 
 /**/if (printLogs) {
     System.out.println("NEWSCAST: Merging my cache (" + cacheSize
@@ -279,7 +280,7 @@ private LinkedList<Integer> mergeCaches(NCCacheEntry[] reCache) {
   NCCacheEntry[] newCache = new NCCacheEntry[maxCacheSize];
 
   while ((i < maxCacheSize) && (localIndex < cacheSize) && (recIndex < recSize)) {
-    boolean isFirst = false;
+    isFirst = false;
 
 //    if (cache[localIndex].getTimestamp() == reCache[recIndex].getTimestamp()) {
 //      isFirst = Config.rand.nextBoolean();
