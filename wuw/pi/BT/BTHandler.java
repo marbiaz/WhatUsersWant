@@ -16,10 +16,19 @@ import wuw.pi.Transaction;
 
 
 public class BTHandler implements PIHandler {
+	
+private PeerID[] wuwPeerList = null;
 
-/**
- *
- */
+public BTHandler(PeerID[] peerList){
+	// TODO Initiate fake tracker in order to handle: messages from/to the local BT client
+	// (announce messages), build answers to/from the real tracker.
+	// In each torrent file replace real trcker's URL by fake tracker's URL
+	// Create a Singleton for handling ranked peerList. Wuw core stuff and Tracker service will
+	// get access to the singleton object
+	wuwPeerList = peerList;
+}
+
+	
 @Override
 public Transaction[] giveContentUpdates() {
   String FromServer = "";
@@ -41,6 +50,7 @@ public Transaction[] giveContentUpdates() {
   }
   System.out.println(FromServer);
   BitTorrentStatistics bTstatistics = new BitTorrentStatistics(FromServer);
+  bTstatistics.setLeftTransactionValues(wuwPeerList);
   Iterator<Entry<String, BitTorrentRequest>> it = bTstatistics.getbTstatistics()
       .entrySet().iterator();
   Entry<String, BitTorrentRequest> e;
