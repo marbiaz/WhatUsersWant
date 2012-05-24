@@ -61,14 +61,14 @@ private int mid;
  * 
  * @param args
  */
-public Newscast(int[] args) {// TODO: decent config!
+public Newscast() {
 
-  maxCacheSize = 50; //args[0];
-  delta = 500; //args[1] * 1000;
-  fanOut = 1; //args[2];
-  sendReply = maxCacheSize + 1; //args[3];
+  maxCacheSize = Integer.parseInt(Config.getValue("newcast", "maxCacheSize"));
+  delta = Integer.parseInt(Config.getValue("newcast", "delta"));
+  fanOut = Integer.parseInt(Config.getValue("newcast", "fanOut"));
+  sendReply = maxCacheSize + 1;
   cacheLock = new Object();
-  mid = -1;
+  mid = Integer.parseInt(Config.getValue("newcast", "mid"));
   printLogs = Config.printLogs;
 
   int i = 0;

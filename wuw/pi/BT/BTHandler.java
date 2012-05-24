@@ -10,31 +10,33 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import wuw.core.Config;
 import wuw.core.PeerID;
 import wuw.pi.PIHandler;
 import wuw.pi.Transaction;
 
 
 public class BTHandler implements PIHandler {
-	
+
 private PeerID[] wuwPeerList = null;
 
 public BTHandler(PeerID[] peerList){
-	// TODO Initiate fake tracker in order to handle: messages from/to the local BT client
-	// (announce messages), build answers to/from the real tracker.
-	// In each torrent file replace real trcker's URL by fake tracker's URL
-	// Create a Singleton for handling ranked peerList. Wuw core stuff and Tracker service will
-	// get access to the singleton object
-	wuwPeerList = peerList;
+  // TODO Initiate fake tracker in order to handle: messages from/to the local BT client
+  // (announce messages), build answers to/from the real tracker.
+  // In each torrent file replace real trcker's URL by fake tracker's URL
+  // Create a Singleton for handling ranked peerList. Wuw core stuff and Tracker service will
+  // get access to the singleton object
+  wuwPeerList = peerList;
 }
 
-	
+
 @Override
 public Transaction[] giveContentUpdates() {
   String FromServer = "";
   Socket clientSocket;
   try {
-    clientSocket = new Socket("localhost", 5000);
+    clientSocket = new Socket(Config.getValue("bittorrent", "bitTorrentHost"),
+        Integer.parseInt(Config.getValue("bittorrent","bitTorrentPort")));
     BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
         clientSocket.getInputStream()));
     FromServer = inFromServer.readLine();
@@ -66,7 +68,7 @@ public Transaction[] giveContentUpdates() {
 @Override
 public void getPeers(String contentID, PeerID[] peers) {
   // TODO Auto-generated method stub
-  
+
 }
 
 }

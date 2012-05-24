@@ -40,17 +40,19 @@ private int pasUpdateCounter;
 
 LocalContentData(String id, int items, Category c, Interest i) {
   super(id, items, c, i);
-  pasSatisfaction = 0.5; // XXX: these are the default to express
-  pacSatisfaction = 0.5; // a 'neutral' judgment,
-  pasAdequation = 0.5; //   but attention should be payed
-  pacAdequation = 0.5; //   to how these values are updated...
-  pasSysEval = 1;
-  pacSysEval = 1;
+  pasSatisfaction = Double.parseDouble(Config.getValue("localpeer", "pas_s")); // XXX: these are the default to express
+  pacSatisfaction = Double.parseDouble(Config.getValue("localpeer", "pac_s")); // a 'neutral' judgment,
+  pasAdequation = Double.parseDouble(Config.getValue("localpeer", "pas_a")); //   but attention should be payed
+  pacAdequation = Double.parseDouble(Config.getValue("localpeer", "pac_a")); //   to how these values are updated...
+  pasSysEval = Double.parseDouble(Config.getValue("localpeer", "pas_e"));
+  pacSysEval = Double.parseDouble(Config.getValue("localpeer", "pac_e"));
   latest = null;
   pasUpdateCounter = 0;
   pacUpdateCounter = 0;
-  pacSatReminders = new HashMap<Integer, Number[]>(50);
-  pasSatReminders = new HashMap<Integer, Number[]>(50);
+  pacSatReminders = new HashMap<Integer, Number[]>(
+      Integer.parseInt(Config.getValue("localpeer", "pacSatRem")));
+  pasSatReminders = new HashMap<Integer, Number[]>(
+      Integer.parseInt(Config.getValue("localpeer", "pasSatRem")));
 }
 
 
@@ -190,9 +192,8 @@ void updateFeedback() {
         if (t.getState() == State.DONE) {
           Config.addUnique(iTracker, tItem);
         }
-      } else {
+      } else
         countWrong++;
-      }
       if (counter[tItem] == 0) {
 /**/    System.err.println("Peer : ERROR : Adequation counter for content "
               + ID + " item " + tItem + " is 0 !!!");

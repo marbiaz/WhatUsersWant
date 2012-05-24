@@ -36,11 +36,15 @@ public static void main(String[] args) throws InterruptedException {
   }
 
   long start = System.currentTimeMillis();
-  int duration = 7200 * 1000;
+  int duration = Integer.parseInt(Config.getValue("config","duration"));
   // TestTMsg.transportTest(args[args.length - 1]);
   //TestOverlayConnection(args[args.length - 1]);
-  PeerID[] neighs = Config.readPeerList(args[args.length - 1], true);
-  Config.getLocalPeer().addContent("eclipse.tar.gz", 429, Category.MOVIES, Interest.PRIMARY, neighs);
+
+  PeerID[] neighs = Config.readPeerList(Config.getValue("localpeer","peerList"), true);
+  Config.getLocalPeer().addContent(Config.getValue("content","id"), 
+      Integer.parseInt(Config.getValue("content","pieces")), 
+      Category.valueOf(Config.getValue("preferences","Category")), 
+      Interest.valueOf(Config.getValue("preferences","Interest")) , neighs);
   while ((System.currentTimeMillis() - start) < duration) {
     try {
       Thread.sleep(duration);

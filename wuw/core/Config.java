@@ -35,13 +35,17 @@ import wuw.ui.WebUI.WebUIHandler;
  */
 public class Config {
 
-public static final boolean printLogs = true;
+public static boolean printLogs;
 
+/*
 static final String usageString = "For a correct execution, the following arguments are needed, in the given order :\n"
     + "    -- The IPv4 address to be used by this instance of WUW.\n"
     + "    -- The port number to be used by this instance of WUW.\n"
     + "    -- The transport protocol to be used (either \"TCP\" or \"UDP\").\n"
     + "    -- The file that contains the list of neighbors for this instance of WUW.\n";
+ */
+static final String usageString = "For a correct execution, the following arguments are needed:\n"
+    + "    -- The XML file that contains all WUW parameters.\n";
 
 /**
  * Random number generator to be used by every object during an execution.
@@ -54,11 +58,17 @@ static public Random rand = null;
 static private Peer localPeer = null;
 
 /**
- * PVO
+ * Map representation of each item in XML configuration file
  * @author gomez-r
  */
 @SuppressWarnings("rawtypes")
-private static Map configParam;
+static private Map configParam;
+
+/**
+ * Useful for logging WUW estatictics
+ * @author gomez-r
+ */
+static public Logger logger;
 
 /**
  * @return The local peer.
@@ -83,7 +93,7 @@ static public boolean set(String[] args) {
     System.err.println("CONFIG ERROR : config setting was attempted twice.");
     return false;
   }
-
+/*
   if (args.length < 4 // Just to catch some macroscopic mistyping...
       || !args[1].matches("[0-9]{4,5}")
       || !args[0].matches("[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}")
@@ -91,19 +101,24 @@ static public boolean set(String[] args) {
     usage();
     return false;
   }
- 
+ */
+  if(args.length != 1){
+    usage();
+    return false;
+  }
+  loadConfig(args[0]);
+  printLogs = Boolean.parseBoolean(getValue("config","printLogs"));
   rand = new Random(System.currentTimeMillis());
-  int localPort = Integer.valueOf(args[1]);
-  PeerID pid = new PeerID(args[0], localPort);
-  CommHandler com = args[2].equalsIgnoreCase("TCP") ? new TCPProtocol(pid) : new UDPProtocol(pid);
-  Newscast news = new Newscast(null); // TODO: get parameters to newscast!
+  logger = Logger.getInstance();
+  int localPort = Integer.parseInt(getValue("localpeer","localPort"));
+  PeerID pid = new PeerID(getValue("localpeer","localIp"), localPort);
+  CommHandler com = getValue("localpeer","protocol").equalsIgnoreCase("TCP") ? 
+      new TCPProtocol(pid) : new UDPProtocol(pid);
+  Newscast news = new Newscast();
   UIHandler ui = new WebUIHandler(); // TODO: write a decent configuration....
-  PIHandler pi = new wuw.pi.BT.BTHandler(readPeerList(args[args.length - 1], false)); //wuw.pi.PIStub();
-  loadConfig(args[3]);
+  PIHandler pi = new wuw.pi.BT.BTHandler(readPeerList(getValue("localpeer","peerList"), false));
   localPeer = new Peer(pid, com, ui, pi, news);
-
   //pi.getPeers(null, readPeerList(args[args.length - 1], false)); // FIXME: to avoid crash on testing
-
   return true;
 }
 
@@ -153,9 +168,9 @@ static public PeerID[] readPeerList(String filePath, boolean shuffle) {
   PeerID[] peerList = new PeerID[pList.size()];
   peerList = pList.toArray(peerList);
 /**/if (printLogs) System.out.println("Peers : " + printArray(peerList));
-  if (shuffle == true) peerList = shuffle(peerList, peerList.length);
+if (shuffle == true) peerList = shuffle(peerList, peerList.length);
 
-  return peerList;
+return peerList;
 }
 
 
@@ -224,50 +239,73 @@ static public String printArray(Object[] a) {
 }
 
 /**
- * A new proposal for parameterize WUW's values from a XML file. For short (Parameterize Version
- * One PVO) 
- * @author gomez-r
- */
-
-/**
- * Load parameters from a XML file
- *@param config the path to the XML configuration file
+ * Load WUW parameters from a XML file to {@code configParam} attribute
+ *@param XML configuration file full path
  *@author gomez-r
  */
 @SuppressWarnings({ "rawtypes", "unchecked" })
-private static void loadConfig(String config) {
-    File configFile = new File(config);
-    SAXBuilder sb = new SAXBuilder();
-    HashMap params = new HashMap();
-    if (configFile.exists())
-        try {
-            Document conf = sb.build(configFile);
-            Element root = conf.getRootElement();
-            for (Iterator it = root.getDescendants(new ElementFilter(
-                    "param"));
-                               it.hasNext(); ) {
-                Element param = (Element) it.next();
-                params.put(param.getAttribute("name").getValue(),
-                           param.getAttribute("value").getValue());
-            }
-            configParam = params;
-        } catch (Exception e) {
-            System.err.println("Error while loading parameters");
+private static void loadConfig(String xmlFile) {
+  Map result = new HashMap();
+  HashMap item;
+  Iterator childIte, paramIte;
+  String key, subKey, subItem;
+  File configFile = new File(xmlFile);
+  SAXBuilder builder = new SAXBuilder();
+  Element children, param;
+  if (configFile.exists())
+    try {
+      Document conf = builder.build(configFile);
+      Element root = conf.getRootElement();
+      childIte = root.getChildren().iterator();
+      while(childIte.hasNext()){
+        children = (Element) childIte.next();
+        key = children.getName();
+        item = new HashMap();
+        paramIte = children.getDescendants(new ElementFilter("param"));
+        while(paramIte.hasNext()){
+          param = (Element) paramIte.next();
+          subKey = param.getAttributeValue("name");
+          subItem = param.getAttributeValue("value");
+          item.put(subKey, subItem);
         }
-    else {
-        System.err.println("No configuration file found...");
-        System.exit(0);
+        result.put(key, item);
+      }
+      configParam = result;
+    } catch (Exception e) {
+      System.err.println("Error while loading parameters");
+      System.exit(1);
     }
+  else {
+    System.err.println("No XML configuration file found");
+    System.exit(1);
+  }
 }
 
 /**
- * 
- * @param param
+ * Get a string representation of the value attribute in label {@code param}, 
+ * from {@code children} item in XML configuration file. 
+ * @param children item in XML configuration file
+ * @param param attribute value in this label
  * @return
  * @author gomez-r
  */
-public static Object get(String param) {
-    return configParam.get(param);
+@SuppressWarnings("rawtypes")
+public static String getValue(String children, String param){
+  String strResult = null;
+  Map childrenMap = (Map)configParam.get(children);
+  if(childrenMap != null){
+    strResult = (String) childrenMap.get(param);
+    if(strResult == null){
+      System.err.println("Error: item '" + param + "' does not exists " +
+          "in XML configuration file");
+      System.exit(1);
+    }
+  }else{
+    System.err.println("Error: item '" + children + "' does not exists " +
+        "in XML configuration file");
+    System.exit(1);
+  }
+  return strResult;
 }
 
 

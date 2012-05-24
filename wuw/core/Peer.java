@@ -93,20 +93,21 @@ public static final String PAC_A = UIHandler.feedback_measures[3];
 public static final String PAC_S = UIHandler.feedback_measures[4];
 public static final String PAC_E = UIHandler.feedback_measures[5];
 
-static final boolean sharePrefs = true; // TODO: make these configurable!
-static final boolean shareInts = true;
-static final boolean saveAll = false; // -> not saving info about unknown contents
+static final boolean sharePrefs = Boolean.parseBoolean(Config.getValue("localpeer","sharePrefs"));
+static final boolean shareInts = Boolean.parseBoolean(Config.getValue("localpeer","shareInts"));
+static final boolean saveAll = Boolean.parseBoolean(
+    Config.getValue("localpeer","saveAll")); // -> not saving info about unknown contents
 // XXX:  this info (this neighbor sharing with others a content local peer is
 //        NOT currently trading) could reveal more about neighbor's interests.
 //        Surely it boosts up memory requirements...
 // weight for the feedback's exponential running average
-static final double alpha = 0.3;
+static final double alpha = Double.parseDouble(Config.getValue("localpeer", "alpha"));
 // weight for the peer's preference while computing intentions
-static final double pref_weight = 0.5;
+static final double pref_weight = Double.parseDouble(Config.getValue("localpeer", "pref_weight"));
 //weight for the local peer's intentions while ranking the neighbors
-static final double selfishness = 0.5;
+static final double selfishness = Double.parseDouble(Config.getValue("localpeer", "selfishness"));
 // max number of peers to be given to the P2P applications after each ranking
-static final int maxNeighSize = 10;
+static final int maxNeighSize = Integer.parseInt(Config.getValue("localpeer","maxNeighSize"));
 
 private final CommHandler transport;
 private final UIHandler ui;
@@ -120,7 +121,6 @@ private Timer computer;
 private int contents;
 private final Object updateLock, dLock;
 private PeerDescriptor myDescriptor;
-private static Logger logger = Logger.getInstance();
 
 /*
  * Standard constructor. It should not be called but by the {@link
@@ -139,13 +139,15 @@ Peer(PeerID p, CommHandler t, UIHandler ui, PIHandler pi, Newscast n) {
   this.pi = pi;
   myContents = new ContentBasket();
   globalNeighborhood = new Neighborhood();
-  epidemicUpdates = new ArrayList<PeerDescriptor>(50);
+  epidemicUpdates = new ArrayList<PeerDescriptor>(Integer.parseInt(
+      Config.getValue("localpeer","queueSize")));
   printLogs = Config.printLogs;
   updateLock = new Object();
   dLock = new Object();
   myDescriptor = new PeerDescriptor();
 
-  computer = new Timer(8000, new ActionListener() {
+  computer = new Timer(Integer.parseInt(Config.getValue("localpeer","doTheMagicTimer")),
+      new ActionListener() {
 
     public void actionPerformed(ActionEvent e) {
       if (contents > 0) doTheMagic();
@@ -504,7 +506,7 @@ private void doTheMagic() {
 /**/System.err.println("Peer: ATTENTION: local peer's card not sent due to previous errors.");
     System.err.flush();
   }
-  logger.updateLogLine(String.valueOf(actuTime - lastTime) + " ");
+  Config.logger.updateLogLine(String.valueOf(actuTime - lastTime) + " ");
   String[] contentIds = myContents.getIDs();
   String contInfo = "";
   LocalContentData actCont = null;
@@ -513,9 +515,9 @@ private void doTheMagic() {
 	  contInfo = contInfo.concat(contentIds[k] + " ");
 	  contInfo = contInfo.concat(actCont.getLogString());
   }
-  logger.updateLogLine(contInfo);
-  logger.writeCurrentLogLine();
-  logger.resetLogLine();
+  Config.logger.updateLogLine(contInfo);
+  Config.logger.writeCurrentLogLine();
+  Config.logger.resetLogLine();
 /**///if (printLogs) {
     System.out.println("My Contents :\n" + Config.printArray(myContents.toArray()));
     System.out

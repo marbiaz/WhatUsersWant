@@ -17,7 +17,7 @@ public class Logger {
 	protected Logger(){
 		actualLogLine = "";
 		try {
-			logFile = new FileWriter((String)Config.get("logFile"), true);
+			logFile = new FileWriter(Config.getValue("localpeer", "logFile"), true);
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
