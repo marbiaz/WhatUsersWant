@@ -80,7 +80,7 @@ public Newscast() {
 //      cache[i] = new NCCacheEntry(neighborList[i].getPeerID());
 //    }
 //  } else {
-    cache = new NCCacheEntry[0];
+  cache = new NCCacheEntry[0];
 //  }
   cacheSize = i;
 
@@ -124,7 +124,7 @@ public void handleMsg(Object msg) {
     }
 
     if (printLogs) {
-/**/ String log = "NEWSCAST: currently " + cacheSize + " descriptors :\n";
+      String log = "NEWSCAST: currently " + cacheSize + " descriptors :\n";
       for (int i = 0; i < cacheSize; i++) {
         log += cache[i].getPeerID().toString() + " - ";
       }
@@ -281,13 +281,11 @@ private LinkedList<Integer> mergeCaches(NCCacheEntry[] reCache) {
 
   while ((i < maxCacheSize) && (localIndex < cacheSize) && (recIndex < recSize)) {
     isFirst = false;
-
 //    if (cache[localIndex].getTimestamp() == reCache[recIndex].getTimestamp()) {
 //      isFirst = Config.rand.nextBoolean();
 //    } else {
-      isFirst = cache[localIndex].getTimestamp() <= reCache[recIndex].getTimestamp();
+    isFirst = cache[localIndex].getTimestamp() <= reCache[recIndex].getTimestamp();
 //    }
-
     if (isFirst) {
       if (contains(newCache, cache[localIndex]) < 0) {
         newCache[i] = cache[localIndex];
