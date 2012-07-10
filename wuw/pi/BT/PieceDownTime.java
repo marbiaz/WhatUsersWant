@@ -1,6 +1,11 @@
 package wuw.pi.BT;
 
-
+/**
+ * This class contains information about the started and download times for each 
+ * BitTorretn piece
+ * @author carvajal-r
+ *
+ */
 class PieceDownTime {
 
 private int piece;
