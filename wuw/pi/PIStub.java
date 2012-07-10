@@ -8,6 +8,7 @@ import wuw.core.Config;
 import wuw.core.PeerID;
 import wuw.pi.Transaction.State;
 import wuw.pi.Transaction.Type;
+import wuw.pi.BT.BtWuwPeer;
 
 
 /**
@@ -79,6 +80,20 @@ public Transaction[] giveContentUpdates() {
 @Override
 public void getPeers(String content, PeerID[] peers) {
   this.peers = peers;
+}
+
+
+@Override
+public BtWuwPeer[] getBestRankedPeers() {
+  // TODO Auto-generated method stub
+  return null;
+}
+
+
+@Override
+public BtWuwPeer[] getPeersForAnnounce() {
+  // TODO Auto-generated method stub
+  return null;
 }
 
 }
