@@ -93,21 +93,27 @@ public static final String PAC_A = UIHandler.feedback_measures[3];
 public static final String PAC_S = UIHandler.feedback_measures[4];
 public static final String PAC_E = UIHandler.feedback_measures[5];
 
-static final boolean sharePrefs = Boolean.parseBoolean(Config.getValue("localpeer","sharePrefs"));
-static final boolean shareInts = Boolean.parseBoolean(Config.getValue("localpeer","shareInts"));
+static final boolean sharePrefs = Boolean.parseBoolean(
+    Config.getValue("localpeer","sharePrefs"));
+static final boolean shareInts = Boolean.parseBoolean(
+    Config.getValue("localpeer","shareInts"));
 static final boolean saveAll = Boolean.parseBoolean(
     Config.getValue("localpeer","saveAll")); // -> not saving info about unknown contents
 // XXX:  this info (this neighbor sharing with others a content local peer is
 //        NOT currently trading) could reveal more about neighbor's interests.
 //        Surely it boosts up memory requirements...
 // weight for the feedback's exponential running average
-static final double alpha = Double.parseDouble(Config.getValue("localpeer", "alpha"));
+static final double alpha = Double.parseDouble(
+    Config.getValue("localpeer", "alpha"));
 // weight for the peer's preference while computing intentions
-static final double pref_weight = Double.parseDouble(Config.getValue("localpeer", "pref_weight"));
+static final double pref_weight = Double.parseDouble(
+    Config.getValue("localpeer", "pref_weight"));
 //weight for the local peer's intentions while ranking the neighbors
-static final double selfishness = Double.parseDouble(Config.getValue("localpeer", "selfishness"));
+static final double selfishness = Double.parseDouble(
+    Config.getValue("localpeer", "selfishness"));
 // max number of peers to be given to the P2P applications after each ranking
-static final int maxNeighSize = Integer.parseInt(Config.getValue("localpeer","maxNeighSize"));
+static final int maxNeighSize = Integer.parseInt(
+    Config.getValue("localpeer","maxNeighSize"));
 
 private final CommHandler transport;
 private final UIHandler ui;
@@ -145,7 +151,6 @@ Peer(PeerID p, CommHandler t, UIHandler ui, PIHandler pi, Newscast n) {
   updateLock = new Object();
   dLock = new Object();
   myDescriptor = new PeerDescriptor();
-
   computer = new Timer(Integer.parseInt(Config.getValue("localpeer","doTheMagicTimer")),
       new ActionListener() {
 
@@ -154,9 +159,7 @@ Peer(PeerID p, CommHandler t, UIHandler ui, PIHandler pi, Newscast n) {
     }
   });
   computer.start();
-
 }
-
 
 /**
  * @return The ID of the local peer
@@ -165,14 +168,12 @@ public PeerID getPeerID() {
   return localID;
 }
 
-
 /**
  * @return The {@link CommHandler} object associated with the local peer
  */
 public CommHandler getTransport() {
   return transport;
 }
-
 
 /**
  * It returns the local peer's freshest {@link PeerDescriptor} available.
@@ -236,9 +237,9 @@ public boolean addContent(String id, int items, Category cat, Interest interest,
       c.init(neighs);
       makeDescriptor();
       // XXX: the first time, all peers are given to the P2P application
-      // FIXME: this is not needed anymore because fake tracker will sent to local BT client the
-      // peer list provided by the real tracker (first time in XXX means first announce message )
-      pi.getPeers(c.ID, peerList);
+      // FIXME: this is not needed anymore because tracker emulator will sent to 
+      // local BT client the peer list provided by the real tracker
+      // pi.getPeers(c.ID, peerList);
     }
   }
   if (myDescriptor.isValid()) {
@@ -266,20 +267,25 @@ public boolean addContent(String id, int items, Category cat, Interest interest,
  *          Descriptors to get
  */
 public void getEpidemicUpdates(Object upd[]) {
-	int indx, i = 0;
-	PeerDescriptor  pd;
-	synchronized (epidemicUpdates) {
-		for (i = 0; i < upd.length; i++) {
-			pd = (PeerDescriptor)upd[i];
-			indx = Collections.binarySearch(epidemicUpdates, pd);
-			if (indx >= 0 && epidemicUpdates.get(indx).getVersion() < pd.getVersion()) {
-				epidemicUpdates.set(indx, pd);
-			} else if (indx < 0) {
-				epidemicUpdates.add(-indx - 1, pd);
-			}
-		}
+  int indx, i = 0;
+  PeerDescriptor  pd;
+  synchronized (epidemicUpdates) {
+    for (i = 0; i < upd.length; i++) {
+      pd = (PeerDescriptor)upd[i];
+      indx = Collections.binarySearch(epidemicUpdates, pd);
+      if (indx >= 0 && epidemicUpdates.get(indx).getVersion() < pd.getVersion()) {
+        epidemicUpdates.set(indx, pd);
+      } else if (indx < 0) {
+        epidemicUpdates.add(-indx - 1, pd);
+      }
+    }
   }
-/**/if (printLogs) {
+  if (printLogs) {
+    if(epidemicUpdates.size() > Integer.parseInt(
+        Config.getValue("localpeer","queueSize"))){
+      System.err.println("Peer: ATTENTION: Epidemic updates queue congestion!");
+      System.err.flush();
+    }
     System.out.println("Peer : The epidemic updates queue currently contains "
         + epidemicUpdates.size() + " descriptors.");
   }
@@ -323,13 +329,13 @@ private void buildGlobalRanking() {
   ArrayList<Intention> intents;
   Intention nintent;
   int pos, csize = myContents.size();
-  String cIDs[] = myContents.getIDs();
+  String cIDs[] = myContents.getIDs(), strLog = "";;
   RankedPeer curr;
   ArrayList<PeerID> neighborhood;
   HashMap<String, ArrayList<PeerID>> neighborhoods =
       new HashMap<String, ArrayList<PeerID>>(csize * 2);
   ArrayList<RankedPeer> globalRanking = new ArrayList<RankedPeer>(globalNeighborhood.size());
-
+  PeerID[] bestRanked = null;
   for (int i = 0; i < csize; i++) {
     intents = myContents.getContent(cIDs[i]).intentions;
     for (Intention intent : intents) {
@@ -368,17 +374,28 @@ private void buildGlobalRanking() {
   Iterator<Entry<String, ArrayList<PeerID>>> nIt = neighborhoods.entrySet().iterator();
   while (nIt.hasNext()) {
     e = nIt.next();
-    pi.getPeers(e.getKey(), e.getValue().toArray(new PeerID[0]));
+    bestRanked = e.getValue().toArray(new PeerID[0]);
+    // Adding to log the best ranked peers
+    if(bestRanked != null){
+      for(int i = 0; i < bestRanked.length; i++){
+        if( i == bestRanked.length - 1 )
+          strLog += "'" + bestRanked[i].toString() + "'";
+        else
+          strLog += "'" + bestRanked[i].toString() + "', ";
+      }
+    }
+    pi.getPeers(e.getKey(), bestRanked);
   }
+  Config.logger.updateLogLine(strLog);
 }
 
 
 private void doTheMagic() {
 
   int i, j, c, dl, tl;
-  String conts[];
-  long lastTime, actuTime;
-  lastTime = System.currentTimeMillis();
+  String conts[], strLog = "";
+  //long lastTime, actuTime;
+  //lastTime = System.currentTimeMillis();
   PeerDescriptor[] newDescriptors = new PeerDescriptor[0];
   synchronized (epidemicUpdates) {
 	  newDescriptors = epidemicUpdates.toArray(newDescriptors);
@@ -390,6 +407,25 @@ private void doTheMagic() {
     newTrans = new Transaction[0];
   } else if (newTrans.length > 1) {
     Arrays.sort(newTrans);
+  }
+  // Adding to log current descriptors and transactions
+  if(newDescriptors != null){
+    strLog += "{'descriptors': [";
+    for(int k = 0; k < newDescriptors.length; k++){
+      if( k == newDescriptors.length - 1 )
+        strLog += newDescriptors[k].toString();
+      else
+        strLog += newDescriptors[k].toString() + ", ";
+    }
+    strLog += "], 'transactions': [";
+    for(int k = 0; k < newTrans.length; k++){
+      if( k == newTrans.length - 1 )
+        strLog += newTrans[k].toString();
+      else
+        strLog += newTrans[k].toString() + ", ";
+    }
+    strLog += "], 'rankedPeers': [";
+    Config.logger.updateLogLine(strLog);
   }
 /**/if (printLogs) {
   System.out.println("New transactions :\n" + Config.printArray(newTrans));
@@ -496,8 +532,8 @@ private void doTheMagic() {
     }
     buildGlobalRanking();
     makeDescriptor();
-  }
-  actuTime = System.currentTimeMillis();
+  }  
+  //actuTime = System.currentTimeMillis();
   if (myDescriptor.isValid()) {
     for (i = 0; i < newNeighs.size(); i++) {
       this.epidemic.sendCard(myDescriptor, newNeighs.get(i));
@@ -506,23 +542,35 @@ private void doTheMagic() {
 /**/System.err.println("Peer: ATTENTION: local peer's card not sent due to previous errors.");
     System.err.flush();
   }
-  Config.logger.updateLogLine(String.valueOf(actuTime - lastTime) + " ");
+  strLog = "]}&[";
   String[] contentIds = myContents.getIDs();
-  String contInfo = "";
   LocalContentData actCont = null;
+  // Adding to log information about contents and WUW memory usage
   for(int k = 0; k < contentIds.length; k++){
-	  actCont = myContents.getContent(contentIds[k]);
-	  contInfo = contInfo.concat(contentIds[k] + " ");
-	  contInfo = contInfo.concat(actCont.getLogString());
+    actCont = myContents.getContent(contentIds[k]);
+    if( k == contentIds.length - 1 )
+      strLog += "{'contentId': '" + contentIds[k] + "', " + actCont.getLogString() + "}";
+    else{
+      strLog += "{'contentId': '" + contentIds[k] + "', " + actCont.getLogString() + "}, ";
+    }
   }
-  Config.logger.updateLogLine(contInfo);
+  strLog += "]&";
+  strLog += Runtime.getRuntime().totalMemory() + "&";
+  Config.logger.updateLogLine(strLog);
   Config.logger.writeCurrentLogLine();
   Config.logger.resetLogLine();
-/**///if (printLogs) {
-    System.out.println("My Contents :\n" + Config.printArray(myContents.toArray()));
-    System.out
-        .println("Current Neighborhood :\n" + Config.printArray(globalNeighborhood.toArray()));
-  //}
+  System.out.println("My Contents :\n" + Config.printArray(myContents.toArray()));
+  System.out.println("Current Neighborhood :\n" + Config.printArray(
+      globalNeighborhood.toArray()));
+}
+
+/**
+ * 
+ * @return Implementation object of {@code PIHandler} interface
+ * @author carvajal-r
+ */
+public PIHandler getPi() {
+  return pi;
 }
 
 
