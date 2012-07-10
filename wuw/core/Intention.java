@@ -90,14 +90,23 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
 }
 
 
+///*
+// * (non-Javadoc)
+// * 
+// * @see java.lang.Object#toString()
+// */
+//public String toString() {
+//  return "<Peer: " + (remote == null ? "me" : remote.ID.toString())
+//      + "; pas = " + pasIntent + "; pac = " + pacIntent + " >";
+//}
+
 /*
  * (non-Javadoc)
- * 
  * @see java.lang.Object#toString()
  */
 public String toString() {
-  return "<Peer: " + (remote == null ? "me" : remote.ID.toString())
-      + "; pas = " + pasIntent + "; pac = " + pacIntent + " >";
+  return "{'remotePeer':" + (remote == null ? "'None'" : "'" + remote.ID.toString()) 
+      + "', 'pasInt': " + pasIntent + ", 'pacInt': " + pacIntent + "}";
 }
 
 }
