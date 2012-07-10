@@ -1,76 +1,60 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-
-	<config>
-		<param name="printLogs" value="true"/>
-		<param name="duration" value="7200000"/>
-	</config>
-
-	<localpeer>
-		<param name="localIp" value="172.16.9.60"/>
-		<param name="localPort" value="15001"/>
-		<param name="protocol" value="UDP"/>
-		<param name="peerList" value="peerList"/>
-		<param name="logFile" value="WuwPerformance.log"/>
-		<param name="sharePrefs" value="true"/>
-		<param name="shareInts" value="true"/>
-		<param name="saveAll" value="false"/>
-		<param name="alpha" value="0.3"/>
-		<param name="pref_weight" value="0.5"/>
-		<param name="selfishness" value="0.5"/>
-		<param name="maxNeighSize" value="10"/>
-		<param name="doTheMagicTimer" value="8000"/>
-		<param name="queueSize" value="50"/>
-		<param name="pas_a" value="0.5"/>
-		<param name="pas_s" value="0.5"/>
-		<param name="pas_e" value="1"/>
-		<param name="pac_a" value="0.5"/>
-		<param name="pac_s" value="0.5"/>
-		<param name="pac_e" value="1"/>
-		<param name="pacSatRem" value="50"/>
-		<param name="pasSatRem" value="50"/>
-	</localpeer>
-
-	<content>
-		<param name="id" value="eclipse.tar.gz"/>
-		<param name="pieces" value="429"/>
-	</content>
-
-	<preferences>
-		<param name="Category" value="MOVIES"/>
-		<param name="Interest" value="PRIMARY"/>
-		<param name="bandwidth" value="256"/>
-		<param name="location" value="europe"/>
-		<param name="reputation" value="0.8"/>
-	</preferences>
-
-	<newcast>
-		<param name="delta" value="500"/>
-		<param name="maxCacheSize" value="50"/>
-		<param name="fanOut" value="1"/>
-		<param name="mid" value="-1"/>
-	</newcast>
-
-	<faketracker>
-		<param name="servername" value="WUW Tracker Emulator"/>
-		<param name="ipAddress" value="172.16.9.50"/>
-		<param name="listeningPort" value="15002"/>
-		<param name="context" value="./tracker/"/>
-		<param name="torrentsDir" value="./tracker/torrents/"/>
-	</faketracker>
-
-	<realtracker>
-		<param name="ipAddress" value="172.16.9.51"/>
-		<param name="listeningPort" value="15003"/>		
-	</realtracker>
-
-	<bittorrent>
-		<param name="bitTorrentHost" value="localhost"/>
-		<param name="bitTorrentPort" value="5000"/>
-		<param name="--one_connection_per_ip" value="0"/>
-		<param name="--one_connection_per_ip" value="0"/>
-		<param name="--display_interval" value="10"/>
-		<param name="--max_upload" value="256"/>
-	</bittorrent>
-
+  <config>
+    <printLogs>true</printLogs>
+    <duration>7200000</duration>
+    <feedbackLogFile></feedbackLogFile>
+    <globalPeerList></globalPeerList>
+  </config>
+  <localpeer>
+    <ipAddress></ipAddress>
+    <portNumber>6881</portNumber>
+    <protocol>UDP</protocol>
+    <sharePrefs>true</sharePrefs>
+    <shareInts>true</shareInts>
+    <saveAll>false</saveAll>
+    <alpha>0.3</alpha>
+    <pref_weight>0.5</pref_weight>
+    <selfishness>0.5</selfishness>
+    <maxNeighSize>10</maxNeighSize>
+    <doTheMagicTimer>8000</doTheMagicTimer>
+    <queueSize>50</queueSize>
+    <pas_a>0.5</pas_a>
+    <pas_s>0.5</pas_s>
+    <pas_e>1</pas_e>
+    <pac_a>0.5</pac_a>
+    <pac_s>0.5</pac_s>
+    <pac_e>1</pac_e>
+    <pacSatRem>50</pacSatRem>
+    <pasSatRem>50</pasSatRem>
+  </localpeer>
+  <content>
+    <id>eclipse.tar.gz</id>
+    <pieces>429</pieces>
+  </content>
+  <preferences>
+    <Category>BOOKS</Category>
+    <Interest>PRIMARY</Interest>
+    <bandwidth>256</bandwidth>
+    <location>europe</location>
+    <reputation>0.8</reputation>
+  </preferences>
+  <newcast>
+    <delta>3000</delta>
+    <maxCacheSize>50</maxCacheSize>
+    <fanOut>1</fanOut>
+    <mid>-1</mid>
+  </newcast>
+  <faketracker>
+    <servername>WUW Tracker Emulator</servername>
+    <ipAddress>localhost</ipAddress>
+    <portNumber>6883</portNumber>
+    <context></context>
+    <torrentsDir></torrentsDir>
+  </faketracker>
+  <bittorrent>
+    <bitTorrentHost>localhost</bitTorrentHost>
+    <bitTorrentPort>5000</bitTorrentPort>
+  </bittorrent>
 </configuration>
+
