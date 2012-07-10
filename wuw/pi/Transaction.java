@@ -216,19 +216,29 @@ public void setMaxBandwidth(double maxBandwidth) {
 }
 
 
+///*
+// * (non-Javadoc)
+// * @see java.lang.Object#toString()
+// */ 
+//public String toString() {
+//  String res = "ContentID : " + contentID + " -- Remote peer : " + remote
+//      + "\nState : " + state + " -- Type : " + type + " -- Item : " + item
+//      + "\nStarted at : " + startTimestamp
+//      + " -- Ended at : " + endTimestamp + "\nBandwidth : " + actualBandwidth
+//      + " over " + maxBandwidth + "\n----------";
+//  return res;
+//}
+
+
 /*
  * (non-Javadoc)
  * @see java.lang.Object#toString()
  */
 public String toString() {
-  String res = "ContentID : " + contentID + " -- Remote peer : " + remote
-      + "\nState : " + state + " -- Type : " + type + " -- Item : " + item
-      + "\nStarted at : " + startTimestamp
-      + " -- Ended at : " + endTimestamp + "\nBandwidth : " + actualBandwidth
-      + " over " + maxBandwidth + "\n----------";
+  String res = "('" + contentID + "', '" + remote.toString() + "', '" + state
+      + "', '" + type + "', " + item + ")";
   return res;
 }
-
 
 /*
  * (non-Javadoc)
