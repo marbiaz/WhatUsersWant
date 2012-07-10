@@ -128,22 +128,30 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
   pasPrefs.readExternal(in);
 }
 
+///*
+// * (non-Javadoc)
+// * @see java.lang.Object#toString()
+// */
+//public String toString() {
+//  String res = ID + " (" + items + " items)"
+//      + " - version " + version + " -- Category : " + category.toString()
+//      + "\nItemMap : " + itemMap.toString() + "\nInterest : " + interest.toString()
+//      + "\nIntentions:\n" + Config.printArray(intentions.toArray())
+//      + "Pas preferences:\n" + pasPrefs.toString()
+//      + "Pac preferences:" + (pacPrefs == null ? " unknown.\n" : "\n" + pacPrefs.toString());
+//  return res;
+//}
 
 /*
  * (non-Javadoc)
- * 
  * @see java.lang.Object#toString()
  */
 public String toString() {
-  String res = ID + " (" + items + " items)"
-      + " - version " + version + " -- Category : " + category.toString()
-      + "\nItemMap : " + itemMap.toString() + "\nInterest : " + interest.toString()
-      + "\nIntentions:\n" + Config.printArray(intentions.toArray())
-      + "Pas preferences:\n" + pasPrefs.toString()
-      + "Pac preferences:" + (pacPrefs == null ? " unknown.\n" : "\n" + pacPrefs.toString());
+  String res = "('" + ID + "', " + version + ", '" + category.toString() + "', " 
+      + itemMap.toString() + ", '" + interest.toString() + "', " + 
+      Config.printList(intentions.toArray()) + ")";
   return res;
 }
-
 
 /*
  * (non-Javadoc)
