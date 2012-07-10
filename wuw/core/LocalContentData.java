@@ -386,10 +386,16 @@ public String toString() {
   return res;
 }
 
+/**
+ * Getting a string of the current feedback separated by labels
+ * @return Current feedback string representation
+ * @author carvajal-r
+ */
 public String getLogString(){
 	String res = "";
-	res = res.concat(pacAdequation + " " + pacSatisfaction + " " + pasAdequation
-			+ " " + pasSatisfaction + " " + pacSysEval + " " + pasSysEval + " ");
+	res += "'pacAd': " + pacAdequation + ", 'pacSat': " + pacSatisfaction 
+	      + ", 'pasAd': " + pasAdequation + ", 'pasSat': " + pasSatisfaction 
+	      + ", 'pacSe': " + pacSysEval + ", 'pasSe': " + pasSysEval;
 	return res;
 }
 
