@@ -40,7 +40,8 @@ public static void main(String[] args) throws InterruptedException {
   // TestTMsg.transportTest(args[args.length - 1]);
   //TestOverlayConnection(args[args.length - 1]);
 
-  PeerID[] neighs = Config.readPeerList(Config.getValue("localpeer","peerList"), true);
+  PeerID[] neighs = Config.readPeerList(
+      Config.getValue("config","globalPeerList"), true);
   Config.getLocalPeer().addContent(Config.getValue("content","id"), 
       Integer.parseInt(Config.getValue("content","pieces")), 
       Category.valueOf(Config.getValue("preferences","Category")), 
