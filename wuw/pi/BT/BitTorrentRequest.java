@@ -4,19 +4,21 @@ package wuw.pi.BT;
 
 import wuw.pi.Transaction;
 
-
+/**
+ * Container of the current pieces interchanges (in form of Transactions objects)  
+ * in which a BitTorrent client is involved in.  
+ * @author carvajal-r
+ */
 class BitTorrentRequest {
 
 private String ipAddr = null;
-private String bitTorrentId = null;
+private String portNumber = null;
 private float currentUplBandwidth;
 private float currentDowBandwidth;
 private float maxUplBandwidth;
 private float maxDowBandwidth;
 private Transaction[] transactions = null;
 
-// TODO this object must index BT data by content ID, the current version just handle
-// one content (modify Python dictionary)
 BitTorrentRequest() {}
 
 
@@ -31,12 +33,12 @@ void setIpAddr(String ipAddr) {
 
 
 String getBitTorrentId() {
-  return bitTorrentId;
+  return portNumber;
 }
 
 
 void setBitTorrentId(String bitTorrentId) {
-  this.bitTorrentId = bitTorrentId;
+  this.portNumber = bitTorrentId;
 }
 
 

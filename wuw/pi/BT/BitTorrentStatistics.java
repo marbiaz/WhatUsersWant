@@ -10,19 +10,16 @@ import wuw.pi.Transaction;
 
 
 /**
- * The BitTorrentStatistics class lets to decode a python dictionary (data
- * structure that contains BitTorrent statistics for WUW core) into Java data
- * types, for each attribute in this class. For getting a Python dictionary, it
- * is mandatory to make a local Java socket connection (port 5000) to a
- * BitTorrent instance.
+ * The BitTorrentStatistics class lets to decode a Python dictionary (data
+ * structure that contains BitTorrent statistics for WUW) into Java data types, 
+ * for each attribute in this class
  * 
- * @author gomez-r
- * @version 1.0
+ * @author carvajal-r
  */
 class BitTorrentStatistics {
 
 /*
- * These attributes are useful for decode process.
+ * These attributes are useful for decode process
  */
 @SuppressWarnings("serial")
 private HashMap<String, String> expectedValues = new HashMap<String, String>() {
@@ -35,28 +32,30 @@ private HashMap<String, String> expectedValues = new HashMap<String, String>() {
 };
 
 /*
- * These attributes are measures of the BitTorrent performance.
+ * These attributes are measures of the BitTorrent performance
  */
 private float seconds;
 private String contentId = null;
 private int downPiecesSize;
 private String downPiecesValuesStr = null;
 private PieceDownTime[] dowPiecesTimes = null;
-private HashMap<String, BitTorrentRequest> bTstatistics = new HashMap<String, BitTorrentRequest>();
+private HashMap<String, BitTorrentRequest> bTstatistics = 
+new HashMap<String, BitTorrentRequest>();
+private HashMap<String, Integer> wuwPorts;
 
 
 /**
  * Once this constructor is called, the Python dictionary will be decode.
  * 
- * @param source
- *          String representation of the Python dictionary
+ * @param source String representation of the Python dictionary
  */
-BitTorrentStatistics(String source) {
+BitTorrentStatistics(String source, HashMap<String, Integer> wuwPorts) {
   /*
    * Scanner class with the specified delimiter lets to get an easy handle way
    * for keys and values in the Python dictionary.
    */
-  Scanner decoder = new Scanner(source).useDelimiter("\\,\\s\\'\\_|\\'\\:\\s|\\{\\'\\_|\\}");
+  this.wuwPorts = wuwPorts;
+  Scanner decoder = new Scanner(source).useDelimiter("\\{\\}|\\,\\s\\'\\_|\\'\\:\\s|\\{\\'\\_|\\}");
   String key, value;
   while (decoder.hasNext()) {
     key = decoder.next();
@@ -77,7 +76,7 @@ BitTorrentStatistics(String source) {
           downPiecesValuesStr = value;
         }
       } else {
-        if (this.hasExpectFormat(key)) {
+        if (hasExpectFormat(key)) {
           decodeBitTorrentReqs(key, value);
         } else {
           System.out.println("Key has not the expected format");
@@ -93,7 +92,11 @@ BitTorrentStatistics(String source) {
   dowPiecesTimes = decodeDowPiecesTimes();
 }
 
-
+/**
+ * Determines if the received Python key has the expected format
+ * @param key String representation of the Python key
+ * @return {@code True} if the format is corrent, otherwise it returns {@code False} 
+ */
 boolean hasExpectFormat(String key) {
   String[] valuesInKey = key.split("\\_");
   if (valuesInKey.length != 7) {
@@ -139,7 +142,12 @@ boolean hasExpectFormat(String key) {
   return true;
 }
 
-
+/**
+ * Main use case for decoding the received Python's key-object pair into a Java's 
+ * key-object pair
+ * @param key String representation of Python key
+ * @param value String representation of a Python object
+ */
 void decodeBitTorrentReqs(String key, String value) {
   String[] valuesInKey = key.split("\\_");
   String ipAddress = valuesInKey[0];
@@ -149,7 +157,8 @@ void decodeBitTorrentReqs(String key, String value) {
   float maxUplBand = Float.valueOf(valuesInKey[4]);
   float maxDowBand = Float.valueOf(valuesInKey[5]);
   int transactions = Integer.valueOf(valuesInKey[6]);
-  Transaction[] transactionArr = decodeTransactions(value, transactions);
+  Transaction[] transactionArr = decodeTransactions(value, 
+      transactions, ipAddress, Integer.valueOf(bitTorrentId));
   BitTorrentRequest bTreqsInfo = new BitTorrentRequest();
   bTreqsInfo.setIpAddr(ipAddress);
   bTreqsInfo.setBitTorrentId(bitTorrentId);
@@ -162,14 +171,22 @@ void decodeBitTorrentReqs(String key, String value) {
   bTstatistics.put(peerId, bTreqsInfo);
 }
 
-
-Transaction[] decodeTransactions(String value, int size) {
+/**
+ * Decode a string Python representation of transactions into an array of 
+ * {@code Transaction} objects
+ * @param value Set of transactions represented in a string
+ * @param size Number of transactions
+ * @param ip IP address of the BitTorrent peer related with these transactions
+ * @param port Port number of the BitTorrent peer related with these transactions
+ * @return Array of {@code Transaction} objects
+ */
+Transaction[] decodeTransactions(String value, int size, String ip, int port) {
   String tranRegExpr = "\\[(\\((((\\d)*\\.(\\d)*|\\'[A-Z]*\\'|(\\d)*)\\,\\s)*((\\d)*"
       + "\\.(\\d)*|\\'[A-Z]*\\'|(\\d)*)\\)\\,\\s)*\\((((\\d)*\\.(\\d)*|\\'[A-Z]*\\'"
       + "|(\\d)*)\\,\\s)*((\\d)*\\.(\\d)*|\\'[A-Z]*\\'|(\\d)*)\\)\\]";
   if (!value.matches(tranRegExpr)) {
-    System.out.println("Set of transactions is not well formatted");
-    System.exit(1);
+    System.err.println("ERROR :: Set of transactions has not the right format");
+    return null;
   }
   Transaction[] transactions = new Transaction[size];
   int i = 0;
@@ -179,8 +196,9 @@ Transaction[] decodeTransactions(String value, int size) {
   Scanner tupleDecoder;
   String state = null;
   String type = null;
+  String key;
   int pieceNumber = -1;
-  float kBprovided = -1.0f;
+  // float kBprovided = -1.0f;
   Transaction tran;
   while (decoder.hasNext()) {
     str4tuple = decoder.next();
@@ -191,16 +209,16 @@ Transaction[] decodeTransactions(String value, int size) {
       switch (j) {
       case 0:
         state = item;
-      break;
+        break;
       case 1:
         type = item;
-      break;
+        break;
       case 2:
         pieceNumber = Integer.valueOf(item);
-      break;
+        break;
       case 3:
-        kBprovided = Float.valueOf(item);
-      break;
+        // kBprovided = Float.valueOf(item);
+        break;
       default:
         System.out.println("This tuple has a not expected value");
         System.exit(1);
@@ -212,8 +230,8 @@ Transaction[] decodeTransactions(String value, int size) {
     tran.setState(identifyTransactionState(state));
     tran.setType(identifyTransactionType(type));
     tran.setItem(pieceNumber);
-    // tran.setContentID("eclipse.tar.gz"); // FIXME: check the contentID string !!! "eclipse.tar.gz"
-    // tran.setRemote(new PeerID("172.16.9.60", 15002)); // FIXME: handle PeerID!!!!
+    key = ip + ":" + port;
+    tran.setRemote(new PeerID(ip, wuwPorts.get(key)));
     // tran.setkBprovided(kBprovided);
     transactions[i] = tran;
     i++;
@@ -222,17 +240,30 @@ Transaction[] decodeTransactions(String value, int size) {
   return transactions;
 }
 
-
+/**
+ * Given an string, this method identifies the right {@code Transaction.State} enum 
+ * object
+ * @param state String representation of an enum {@code Transaction.State}
+ * @return Associated enum object or {@code null} if the enum is not recognized
+ */
 Transaction.State identifyTransactionState(String state) {
-  if (state.equals("'" + Transaction.State.DONE.toString() + "'")) return Transaction.State.DONE;
-  if (state.equals("'" + Transaction.State.ON.toString() + "'")) return Transaction.State.ON;
-  if (state.equals("'" + Transaction.State.WRONG.toString() + "'")) return Transaction.State.WRONG;
+  if (state.equals("'" + Transaction.State.DONE.toString() + "'")) 
+    return Transaction.State.DONE;
+  if (state.equals("'" + Transaction.State.ON.toString() + "'")) 
+    return Transaction.State.ON;
+  if (state.equals("'" + Transaction.State.WRONG.toString() + "'")) 
+    return Transaction.State.WRONG;
   System.out.println("Transaction state not recognized");
   System.exit(1);
   return null;
 }
 
-
+/**
+ * Given an string, this method identifies the right {@code Transaction.Type} enum 
+ * object
+ * @param type String representation of an enum {@code Transaction.Type}
+ * @return Associated enum object or {@code null} if the enum is not recognized
+ */
 Transaction.Type identifyTransactionType(String type) {
   if (type.equals("'" + Transaction.Type.IN.toString() + "'")) return Transaction.Type.IN;
   if (type.equals("'" + Transaction.Type.OUT.toString() + "'")) return Transaction.Type.OUT;
@@ -241,8 +272,13 @@ Transaction.Type identifyTransactionType(String type) {
   return null;
 }
 
-
+/**
+ * Decode the start-download times pair related with one piece of the content, in the 
+ * BitTorrent context 
+ * @return Array of Started and download times for each piece of the content
+ */
 private PieceDownTime[] decodeDowPiecesTimes() {
+  // TODO Code a way for verifying the right format of pieces
   // String expecTuplRegExp =
   // "\\[(\\((((\\d)*|(\\d)*\\.(\\d)*|None)\\,\\s)*((\\d)*|(\\d)*\\.(\\d)*" +
   // "|None)\\)\\,\\s)*(\\((((\\d)*|(\\d)*\\.(\\d)*|None)\\,\\s)*((\\d)*|(\\d)*\\."
@@ -270,21 +306,21 @@ private PieceDownTime[] decodeDowPiecesTimes() {
       switch (j) {
       case 0:
         piece = Integer.valueOf(item);
-      break;
+        break;
       case 1:
         if (item.equals("None")) {
           startTime = -1.0f;
         } else {
           startTime = Float.valueOf(item);
         }
-      break;
+        break;
       case 2:
         if (item.equals("None")) {
           endTime = -1.0f;
         } else {
           endTime = Float.valueOf(item);
         }
-      break;
+        break;
       default:
         System.out.println("This tuple (start-end pieces times) has a not expected value");
         System.exit(1);
@@ -314,33 +350,30 @@ PieceDownTime[] getDowPiecesTimes() {
   return dowPiecesTimes;
 }
 
-
+/**
+ * Get the {@code bTstatistics} attribute of this object. Pairs of each item in 
+ * this map, is related to the BitTorrent peer ID as a key and the set of 
+ * transactions ({@code BitTorrentRequest} object) as a value 
+ * @return 
+ */
 HashMap<String, BitTorrentRequest> getbTstatistics() {
   return bTstatistics;
 }
 
-public void setLeftTransactionValues(PeerID[] wuwPeerList){
-	PeerID peerId = null;
-	HashMap<String, Integer> map = new HashMap<String, Integer>();
-	int sizeList = wuwPeerList.length;
-	for(int i = 0; i < sizeList; i++){
-		peerId = wuwPeerList[i];
-		map.put(peerId.getIP().getHostAddress(), peerId.getPort());
-	}
-	Iterator<BitTorrentRequest> values = bTstatistics.values().iterator();
-	BitTorrentRequest btReq = null;
-	String ipAddr = null;
-	int port, tranSize;
-	while(values.hasNext()){
-		btReq = values.next();
-		ipAddr = btReq.getIpAddr();
-		port = map.get(ipAddr);
-		tranSize = btReq.getTransactions().length;
-		for(int i = 0; i < tranSize; i++){
-			btReq.getTransactions()[i].setContentID(contentId);
-			btReq.getTransactions()[i].setRemote(new PeerID(ipAddr, port));
-		}
-	}
+/**
+ * Set the current content identifier related with a set of 
+ * {@code Transaction} objects
+ */
+public void setLeftTransactionValues(){
+  Iterator<BitTorrentRequest> values = bTstatistics.values().iterator();
+  BitTorrentRequest btReq = null;
+  int tranSize;
+  while(values.hasNext()){
+    btReq = values.next();
+    tranSize = btReq.getTransactions().length;
+    for(int i = 0; i < tranSize; i++)
+      btReq.getTransactions()[i].setContentID(contentId);
+  }
 }
 
 }
