@@ -10,7 +10,6 @@ import wuw.pi.Transaction;
 import wuw.pi.Transaction.State;
 import wuw.pi.Transaction.Type;
 
-
 /**
  * Information about a {@link Neighbor} related to a given content.
  * 
