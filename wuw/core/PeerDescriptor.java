@@ -65,7 +65,7 @@ PeerDescriptor(PeerID p, ContentData[] c) {
 }
 
 int getVersion() {
-	return version;
+  return version;
 }
 
 
@@ -151,6 +151,23 @@ public int compareTo(PeerDescriptor o) {
  */
 public boolean equals(Object o) {
   return ID.equals(((PeerDescriptor)o).ID);
+}
+
+public String toString() {
+  String res = "()";
+  ContentData[] contents = getContents();
+  if(contents == null)
+    return res;
+  else{
+    res = "('" + ID.toString() + "', " + version + ", [";
+    for(int i = 0; i < contents.length; i++){
+      if( i == contents.length - 1 )
+        res += contents[i].toString() + "])";
+      else
+        res += contents[i].toString() + ", ";
+    }
+  }
+  return res;
 }
 
 }
