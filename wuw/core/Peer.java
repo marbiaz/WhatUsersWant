@@ -98,20 +98,13 @@ static final boolean sharePrefs = Boolean.parseBoolean(
 static final boolean shareInts = Boolean.parseBoolean(
     Config.getValue("localpeer","shareInts"));
 static final boolean saveAll = Boolean.parseBoolean(
-    Config.getValue("localpeer","saveAll")); // -> not saving info about unknown contents
-// XXX:  this info (this neighbor sharing with others a content local peer is
-//        NOT currently trading) could reveal more about neighbor's interests.
-//        Surely it boosts up memory requirements...
-// weight for the feedback's exponential running average
+    Config.getValue("localpeer","saveAll"));
 static final double alpha = Double.parseDouble(
     Config.getValue("localpeer", "alpha"));
-// weight for the peer's preference while computing intentions
 static final double pref_weight = Double.parseDouble(
     Config.getValue("localpeer", "pref_weight"));
-//weight for the local peer's intentions while ranking the neighbors
 static final double selfishness = Double.parseDouble(
     Config.getValue("localpeer", "selfishness"));
-// max number of peers to be given to the P2P applications after each ranking
 static final int maxNeighSize = Integer.parseInt(
     Config.getValue("localpeer","maxNeighSize"));
 
@@ -236,10 +229,6 @@ public boolean addContent(String id, int items, Category cat, Interest interest,
       }
       c.init(neighs);
       makeDescriptor();
-      // XXX: the first time, all peers are given to the P2P application
-      // FIXME: this is not needed anymore because tracker emulator will sent to 
-      // local BT client the peer list provided by the real tracker
-      // pi.getPeers(c.ID, peerList);
     }
   }
   if (myDescriptor.isValid()) {
