@@ -87,7 +87,12 @@ public Newscast() {
   sender = new Timer(delta, new ActionListener() {
 
     public void actionPerformed(ActionEvent e) {
+      synchronized (cacheLock) {
+        for (int i = 0; i < cacheSize; i++) {
+          cache[i].incTimestamp();
+        }
         send(getPeers(fanOut), false);
+      }
     }
   });
   sender.start();
@@ -239,9 +244,6 @@ private void send(PeerID[] dest, boolean isReply) {
   synchronized (cacheLock) {
     localCache = new NCCacheEntry[cacheSize + 1];
     if (cacheSize > 0) {
-      for (int i = 0; i < cacheSize; i++) {
-        cache[i].incTimestamp();
-      }
       // TODO: (possibly harmful to info dissemination): for every content in target descriptor
       // choose from cache only the peers interested in that content. But only
       // once! Not easy... Now the same cache is sent to all the recipients....
