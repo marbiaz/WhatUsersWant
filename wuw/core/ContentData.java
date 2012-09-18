@@ -147,8 +147,7 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
  * @see java.lang.Object#toString()
  */
 public String toString() {
-  String res = "('" + ID + "', " + version + ", '" + category.toString() + "', " 
-      + itemMap.toString() + ", '" + interest.toString() + "', " + 
+  String res = "('" + ID + "', '" + interest.toString() + "', " + 
       Config.printList(intentions.toArray()) + ")";
   return res;
 }

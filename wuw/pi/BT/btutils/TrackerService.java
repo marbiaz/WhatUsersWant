@@ -104,11 +104,7 @@ public void process(Request req, Response resp) throws IOException {
       // Re-request message sent by the BT local instance
       // 1. Ask to WUW core the best ranked peers
       // 2. Sent them to the BT local instance
-      if( param.get("compact") != null ){
-        System.out.println("*** BEST RANKED PEERS ***");
-        peers = Config.getLocalPeer().getPi().getBestRankedPeers();
-      }else
-        System.out.println("In Re-request Msg compact is null");
+      peers = Config.getLocalPeer().getPi().getBestRankedPeers();
     }else{
       // &event= 'started' || 'completed' || 'stopped'
       // IF event.equals(AnnounceEvent.STARTED) for WUW could be useful
@@ -119,20 +115,23 @@ public void process(Request req, Response resp) throws IOException {
       // Announce message received by the local BT instance
       // 1. Chose a set of peers in a randomly way. How many?
       // 2. Sent them to the local BT instance
-      System.out.println("*** PEERS FROM FIRST ANNOUNCE ***");
-      peers = Config.getLocalPeer().getPi().getPeersForAnnounce();
+      if( event.equals(AnnounceEvent.STARTED) )
+        peers = Config.getLocalPeer().getPi().getPeersForAnnounce();
+      else
+        peers = Config.getLocalPeer().getPi().getBestRankedPeers();
     }
     if(peers != null){
       peerList = new ArrayList(peers.length);
+      System.out.println("PEER LIST TO BITTORRENT");
       for(int i = 0; i < peers.length; i++){
         peer = new Peer();
         peer.setIP(peers[i].getIpAddress());
         peer.setPort(peers[i].getBtPort());
         peerMap = new TreeMap();
         peerMap.put("ip", peer.getIP());
-        peerMap.put("port", Integer.valueOf(peer.getPort()));
-        peerList.add(peerMap);
+        peerMap.put("port", peer.getPort());
         System.out.println(peer.getIP() + ":" + peer.getPort());
+        peerList.add(peerMap);
       }
     }
   }else{

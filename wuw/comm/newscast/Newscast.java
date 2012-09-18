@@ -286,7 +286,7 @@ private LinkedList<Integer> mergeCaches(NCCacheEntry[] reCache) {
 //    if (cache[localIndex].getTimestamp() == reCache[recIndex].getTimestamp()) {
 //      isFirst = Config.rand.nextBoolean();
 //    } else {
-    isFirst = cache[localIndex].getTimestamp() <= reCache[recIndex].getTimestamp();
+    isFirst = cache[localIndex].getTimestamp() < reCache[recIndex].getTimestamp();
 //    }
     if (isFirst) {
       if (contains(newCache, cache[localIndex]) < 0) {

@@ -122,7 +122,6 @@ public void getPeers(String contentID, PeerID[] peers) {
       length = peers.length;
       bestRankedKeys = new String[length];
       for(int i = 0; i < length; i++){
-        System.out.println("****Received ranked :: " + peers[i].toString());
         bestRankedKeys[i] = peers[i].toString();
       }
     }
@@ -176,7 +175,7 @@ private void loadWuwBtPeerList(String filePath){
         ipAddr = tokens[1];
         wuwPort = Integer.valueOf(tokens[2]);
         btPort = Integer.valueOf(tokens[3]);
-        wuwPeers.put(ipAddr + ":" + btPort, wuwPort);
+        wuwPeers.put(ipAddr, wuwPort);
         peerType = tokens[4];
         key = ipAddr + ":" + wuwPort;
         peer = new BtWuwPeer(ipAddr, wuwPort, btPort);
@@ -194,8 +193,10 @@ private void loadWuwBtPeerList(String filePath){
   ipAddr = Config.getValue("localpeer", "ipAddress");
   wuwPort = Integer.valueOf(Config.getValue("localpeer", "portNumber"));
   key = ipAddr + ":" + wuwPort;
-  btLeechers.remove(key);
-  btSeeders.remove(key);
+  if( btLeechers.containsValue(key) )
+    btLeechers.remove(key);
+  if( btSeeders.containsKey(key) )
+    btSeeders.remove(key);
 }
 
 /*
@@ -216,7 +217,7 @@ public BtWuwPeer[] getPeersForAnnounce(){
   @SuppressWarnings("rawtypes")
   Iterator peerIt;
   if(btSeeders.size() != 0){
-    seedersNum = (int) Math.ceil(btSeeders.size()/3.0);
+    seedersNum = (int) Math.ceil( (3.0 * btSeeders.size()) / 10.0 );
     tempList = new ArrayList<BtWuwPeer>(btSeeders.size());
     peerIt = btSeeders.values().iterator();
     while(peerIt.hasNext())
@@ -224,7 +225,7 @@ public BtWuwPeer[] getPeersForAnnounce(){
     seeders =  choseRandomly(tempList.toArray(new BtWuwPeer[0]), seedersNum);
   }
   if(btLeechers.size() != 0){
-    leechersNum = (int) Math.ceil(btLeechers.size()/4.0);
+    leechersNum = (int) Math.ceil( btLeechers.size() / 10.0);
     tempList = new ArrayList<BtWuwPeer>(btLeechers.size());
     peerIt = btLeechers.values().iterator();
     while(peerIt.hasNext())

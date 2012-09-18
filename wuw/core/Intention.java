@@ -105,8 +105,7 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
  * @see java.lang.Object#toString()
  */
 public String toString() {
-  return "{'remotePeer':" + (remote == null ? "'None'" : "'" + remote.ID.toString()) 
-      + "', 'pasInt': " + pasIntent + ", 'pacInt': " + pacIntent + "}";
+  return "{'pasInt': " + pasIntent + ", 'pacInt': " + pacIntent + "}";
 }
 
 }

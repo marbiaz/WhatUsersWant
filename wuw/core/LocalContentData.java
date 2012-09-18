@@ -218,6 +218,8 @@ void updateFeedback() {
           : ((1 - Peer.alpha) * pacSatisfaction) + (Peer.alpha * S);
     }
     pacSysEval = pacSatisfaction / pacAdequation;
+    if(Double.isNaN(pacSysEval))
+      pacSysEval = 0.0;
     // TODO: add current pac feedback to a cumulative running average...
 
     iTracker.clear();
@@ -304,6 +306,8 @@ void updateFeedback() {
           : ((1 - Peer.alpha) * pasSatisfaction) + (Peer.alpha * S);
     }
     pasSysEval = pasSatisfaction / pasAdequation;
+    if(Double.isNaN(pasSysEval))
+      pasSysEval = 0.0;
     // TODO: add current pas feedback to a cumulative running average...
 
     iTracker.clear();
@@ -321,6 +325,7 @@ void updateFeedback() {
  * The preferences of the users are totally ignored.
  */
 void computeIntentions() {
+  String strLog = "'intentions': [";
   Intention intent; double pas, pac, pref;
   NeighborContentData ncd; Neighbor n;
   Transaction t; Iterator<Transaction> tit;
@@ -328,13 +333,11 @@ void computeIntentions() {
     intent = intentions.get(i);
     n = intent.remote;
     ncd = n.getContent(ID);
-    pas = 0; pac = 0;
-
+    pas = 0; pac = 0; pref = 0.0;
     // prefs : similarity between interest in the content
-    pref = -Math.abs(ncd.contentInfo.interest.ordinal() - interest.ordinal());
+    pref = (-1.0) * Math.abs(ncd.contentInfo.interest.ordinal() - interest.ordinal());
     // change interval from [-4..0] to [-1..1] : (X-A)/(B-A)*(D-C)+C
-    pref = (pref / 2) + 1;
-
+    pref = (pref / 2.0) + 1;
     // reputation : good transactions / total transactions
     if (ncd.downloads != null && ncd.downloads.size() > 0) {
       tit = ncd.downloads.iterator();
@@ -345,13 +348,13 @@ void computeIntentions() {
         }
       }
       pac = pac / ncd.downloads.size();
-      // change interval from [0..1] to [-1..1] : (X-A)/(B-A)*(D-C)+C
-      pac = (pac * 2) - 1;
       ncd.downloads.clear();
-      // pac intention : W*pref + (1 - W)*rep
-      intent.pacIntent = (Peer.pref_weight * pref) + ((1 - Peer.pref_weight) * pac);
     }
-
+    // pac intention : W*pref + (1 - W)*rep
+    // change interval from [0..1] to [-1..1] : (X-A)/(B-A)*(D-C)+C
+    pac = (pac * 2) - 1;
+    // Original way of compute intentions (client)
+    intent.pacIntent = (Peer.pref_weight * pref) + ((1 - Peer.pref_weight) * pac);
     if (ncd.uploads != null && ncd.uploads.size() > 0) {
       tit = ncd.uploads.iterator();
       while (tit.hasNext()) {
@@ -361,13 +364,26 @@ void computeIntentions() {
         }
       }
       pas = pas / ncd.uploads.size();
-      // change interval from [0..1] to [-1..1] : (X-A)/(B-A)*(D-C)+C
-      pas = (pas * 2) - 1;
       ncd.uploads.clear();
-      //pas intention : S*rep + (1 - S)*pref // FIXME: it should be L instead of rep
-      intent.pasIntent = (pasSatisfaction * pas) + ((1 - pasSatisfaction) * pref);
+    }
+    // change interval from [0..1] to [-1..1] : (X-A)/(B-A)*(D-C)+C
+    pas = (pas * 2) - 1;
+    //pas intention : S*rep + (1 - S)*pref // FIXME: it should be L instead of rep
+    // Original way of compute intentions (server) [-2, 2]
+    //intent.pasIntent = (pasSatisfaction * pas) + ((1 - pasSatisfaction) * pref);
+    intent.pasIntent = (pref + pas)/2;
+    if(i == intentions.size() - 1){
+      strLog += "{'neighbor': '" + n.ID.toString() + "', 'interest': '" + 
+          ncd.contentInfo.interest.toString() + "', 'pacInt': " + intent.pacIntent
+        + ", 'pasInt': " + intent.pasIntent + "}], ";
+    }
+    else{
+      strLog += "{'neighbor': '" + n.ID.toString() + "', 'interest': '" + 
+          ncd.contentInfo.interest.toString() + "', 'pacInt': " + intent.pacIntent
+        + ", 'pasInt': " + intent.pasIntent + "}, ";
     }
   }
+  Config.logger.updateLogLine(strLog);
 }
 
 

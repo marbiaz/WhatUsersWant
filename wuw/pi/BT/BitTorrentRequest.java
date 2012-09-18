@@ -12,7 +12,7 @@ import wuw.pi.Transaction;
 class BitTorrentRequest {
 
 private String ipAddr = null;
-private String portNumber = null;
+//private String portNumber = null;
 private float currentUplBandwidth;
 private float currentDowBandwidth;
 private float maxUplBandwidth;
@@ -32,14 +32,14 @@ void setIpAddr(String ipAddr) {
 }
 
 
-String getBitTorrentId() {
-  return portNumber;
-}
+//String getBitTorrentId() {
+//  return portNumber;
+//}
 
 
-void setBitTorrentId(String bitTorrentId) {
-  this.portNumber = bitTorrentId;
-}
+//void setBitTorrentId(String bitTorrentId) {
+//  this.portNumber = bitTorrentId;
+//}
 
 
 float getCurrentUplBandwidth() {

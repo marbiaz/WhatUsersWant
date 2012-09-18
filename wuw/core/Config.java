@@ -286,6 +286,10 @@ public static boolean editConfigFile(String xmlFile, String[] args){
     root.getChild("faketracker").getChild("torrentsDir").setText(args[3] 
         + "/torrents");
     root.getChild("localpeer").getChild("ipAddress").setText(args[4]);
+    root.getChild("localpeer").getChild("portNumber").setText(args[5]);
+    root.getChild("faketracker").getChild("portNumber").setText(args[6]);
+    root.getChild("bittorrent").getChild("bitTorrentPort").setText(args[7]);
+    root.getChild("preferences").getChild("Interest").setText(args[8]);
     XMLOutputter xmlOutput = new XMLOutputter();
     xmlOutput.setFormat(Format.getPrettyFormat());
     xmlOutput.output(conf, new FileWriter(xmlFile));

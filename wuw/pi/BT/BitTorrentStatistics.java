@@ -99,7 +99,7 @@ BitTorrentStatistics(String source, HashMap<String, Integer> wuwPorts) {
  */
 boolean hasExpectFormat(String key) {
   String[] valuesInKey = key.split("\\_");
-  if (valuesInKey.length != 7) {
+  if (valuesInKey.length != 6) {
     System.out.println("The number of values in key is incorrect");
     return false;
   }
@@ -108,33 +108,28 @@ boolean hasExpectFormat(String key) {
     System.out.println("Ip address has not a rigth format");
     return false;
   }
-  String bitTorrentId = valuesInKey[1];
-  if (!bitTorrentId.matches("(\\d|[a-zA-Z]|\\-)*")) {
-    System.out.println("BitTorrent identifier has not a right format");
-    return false;
-  }
   String regularExprForFloat = "(\\d)*\\.(\\d)*|(\\d)*";
-  String currUplBan = valuesInKey[2];
+  String currUplBan = valuesInKey[1];
   if (!currUplBan.matches(regularExprForFloat)) {
     System.out.println("Expected float value (currUplB) is not right");
     return false;
   }
-  String currDowBand = valuesInKey[3];
+  String currDowBand = valuesInKey[2];
   if (!currDowBand.matches(regularExprForFloat)) {
     System.out.println("Expected float value (currDowB) is not right");
     return false;
   }
-  String maxUplBand = valuesInKey[4];
+  String maxUplBand = valuesInKey[3];
   if (!maxUplBand.matches(regularExprForFloat)) {
     System.out.println("Expected float value (maxUplB) is not right");
     return false;
   }
-  String maxDowBand = valuesInKey[5];
+  String maxDowBand = valuesInKey[4];
   if (!maxDowBand.matches(regularExprForFloat)) {
     System.out.println("Expected float value (dowUplB) is not right");
     return false;
   }
-  String transactions = valuesInKey[6];
+  String transactions = valuesInKey[5];
   if (!transactions.matches(regularExprForFloat)) {
     System.out.println("Expected float value (transactions) is not right");
     return false;
@@ -151,23 +146,22 @@ boolean hasExpectFormat(String key) {
 void decodeBitTorrentReqs(String key, String value) {
   String[] valuesInKey = key.split("\\_");
   String ipAddress = valuesInKey[0];
-  String bitTorrentId = valuesInKey[1];
-  float currUplBan = Float.valueOf(valuesInKey[2]);
-  float currDowBand = Float.valueOf(valuesInKey[3]);
-  float maxUplBand = Float.valueOf(valuesInKey[4]);
-  float maxDowBand = Float.valueOf(valuesInKey[5]);
-  int transactions = Integer.valueOf(valuesInKey[6]);
+  float currUplBan = Float.valueOf(valuesInKey[1]);
+  float currDowBand = Float.valueOf(valuesInKey[2]);
+  float maxUplBand = Float.valueOf(valuesInKey[3]);
+  float maxDowBand = Float.valueOf(valuesInKey[4]);
+  int transactions = Integer.valueOf(valuesInKey[5]);
   Transaction[] transactionArr = decodeTransactions(value, 
-      transactions, ipAddress, Integer.valueOf(bitTorrentId));
+      transactions, ipAddress);
   BitTorrentRequest bTreqsInfo = new BitTorrentRequest();
   bTreqsInfo.setIpAddr(ipAddress);
-  bTreqsInfo.setBitTorrentId(bitTorrentId);
+  // bTreqsInfo.setBitTorrentId(bitTorrentId);
   bTreqsInfo.setCurrentUplBandwidth(currUplBan);
   bTreqsInfo.setCurrentDowBandwidth(currDowBand);
   bTreqsInfo.setMaxUplBandwidth(maxUplBand);
   bTreqsInfo.setMaxDowBandwidth(maxDowBand);
   bTreqsInfo.setTransactions(transactionArr);
-  String peerId = ipAddress + bitTorrentId;
+  String peerId = ipAddress;
   bTstatistics.put(peerId, bTreqsInfo);
 }
 
@@ -180,7 +174,7 @@ void decodeBitTorrentReqs(String key, String value) {
  * @param port Port number of the BitTorrent peer related with these transactions
  * @return Array of {@code Transaction} objects
  */
-Transaction[] decodeTransactions(String value, int size, String ip, int port) {
+Transaction[] decodeTransactions(String value, int size, String ip) {
   String tranRegExpr = "\\[(\\((((\\d)*\\.(\\d)*|\\'[A-Z]*\\'|(\\d)*)\\,\\s)*((\\d)*"
       + "\\.(\\d)*|\\'[A-Z]*\\'|(\\d)*)\\)\\,\\s)*\\((((\\d)*\\.(\\d)*|\\'[A-Z]*\\'"
       + "|(\\d)*)\\,\\s)*((\\d)*\\.(\\d)*|\\'[A-Z]*\\'|(\\d)*)\\)\\]";
@@ -230,7 +224,7 @@ Transaction[] decodeTransactions(String value, int size, String ip, int port) {
     tran.setState(identifyTransactionState(state));
     tran.setType(identifyTransactionType(type));
     tran.setItem(pieceNumber);
-    key = ip + ":" + port;
+    key = ip;
     tran.setRemote(new PeerID(ip, wuwPorts.get(key)));
     // tran.setkBprovided(kBprovided);
     transactions[i] = tran;

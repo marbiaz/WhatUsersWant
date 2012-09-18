@@ -299,9 +299,11 @@ private void makeDescriptor() {
  */
 private double scoreNeigh(Intention myIntent, Intention nIntent) {
   double res;
-  res = (selfishness * myIntent.pacIntent) + ((1 - selfishness) * nIntent.pasIntent);
-  res += (selfishness * myIntent.pasIntent) + ((1 - selfishness) * nIntent.pacIntent);
-  return res / 2;
+  res = myIntent.pacIntent + nIntent.pasIntent;
+  res += myIntent.pasIntent + nIntent.pacIntent;
+  // res = (selfishness * myIntent.pacIntent) + ((1 - selfishness) * nIntent.pasIntent);
+  // res += (selfishness * myIntent.pasIntent) + ((1 - selfishness) * nIntent.pacIntent);
+  return res / 4.0;
 }
 
 
@@ -318,11 +320,18 @@ private void buildGlobalRanking() {
   ArrayList<Intention> intents;
   Intention nintent;
   int pos, csize = myContents.size();
-  String cIDs[] = myContents.getIDs(), strLog = "";;
+  String cIDs[] = myContents.getIDs(), strLog = "'rankedPeers': [";
   RankedPeer curr;
   ArrayList<PeerID> neighborhood;
   HashMap<String, ArrayList<PeerID>> neighborhoods =
       new HashMap<String, ArrayList<PeerID>>(csize * 2);
+//Map useful for logging best ranked peers with scores
+  HashMap<String, ArrayList<RankedPeer>> rankedPeersWithScores = 
+      new HashMap<String, ArrayList<RankedPeer>>(csize*2);
+//Item in rankedPeersWithScores map
+  ArrayList<RankedPeer> rankedPeers;
+//Temp ranked peer
+  RankedPeer[] rankedArr = null;
   ArrayList<RankedPeer> globalRanking = new ArrayList<RankedPeer>(globalNeighborhood.size());
   PeerID[] bestRanked = null;
   for (int i = 0; i < csize; i++) {
@@ -345,7 +354,7 @@ private void buildGlobalRanking() {
     curr.score /= curr.contents;
   }
   Collections.sort(globalRanking);
-  for (int i = 0; i < globalRanking.size(); i++) {
+  for (int i = globalRanking.size() -1; i >= 0; i--) {
     curr = globalRanking.get(i);
     for (String c : curr.contentIDs) {
       if (neighborhoods.containsKey(c)) {
@@ -357,6 +366,14 @@ private void buildGlobalRanking() {
       if (neighborhood.size() < maxNeighSize) {
         neighborhood.add(curr.peer);
       }
+      if(rankedPeersWithScores.containsKey(c))
+        rankedPeers = rankedPeersWithScores.get(c);
+      else{
+        rankedPeers = new ArrayList<RankedPeer>(maxNeighSize);
+        rankedPeersWithScores.put(c, rankedPeers);
+      }
+      if(rankedPeers.size() < maxNeighSize)
+        rankedPeers.add(curr);
     }
   }
   Entry<String, ArrayList<PeerID>> e;
@@ -364,16 +381,22 @@ private void buildGlobalRanking() {
   while (nIt.hasNext()) {
     e = nIt.next();
     bestRanked = e.getValue().toArray(new PeerID[0]);
-    // Adding to log the best ranked peers
-    if(bestRanked != null){
-      for(int i = 0; i < bestRanked.length; i++){
-        if( i == bestRanked.length - 1 )
-          strLog += "'" + bestRanked[i].toString() + "'";
+    pi.getPeers(e.getKey(), bestRanked);
+  }
+  // Adding to log the best ranked peers
+  Entry<String, ArrayList<RankedPeer>> rE;
+  Iterator<Entry<String, ArrayList<RankedPeer>>> rIt = rankedPeersWithScores.entrySet().iterator();
+  while(rIt.hasNext()){
+    rE = rIt.next();
+    rankedArr = rE.getValue().toArray(new RankedPeer[0]);
+    if(rankedArr != null){
+      for(int i = 0; i < rankedArr.length; i++){
+        if( i == rankedArr.length - 1 )
+          strLog += "('" + rankedArr[i].peer.toString() + "', " + rankedArr[i].score + ")";
         else
-          strLog += "'" + bestRanked[i].toString() + "', ";
+          strLog += "('" + rankedArr[i].peer.toString() + "', " + rankedArr[i].score + "), ";
       }
     }
-    pi.getPeers(e.getKey(), bestRanked);
   }
   Config.logger.updateLogLine(strLog);
 }
@@ -413,7 +436,7 @@ private void doTheMagic() {
       else
         strLog += newTrans[k].toString() + ", ";
     }
-    strLog += "], 'rankedPeers': [";
+    strLog += "], ";
     Config.logger.updateLogLine(strLog);
   }
 /**/if (printLogs) {
