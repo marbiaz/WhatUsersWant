@@ -44,6 +44,7 @@ public class BTHandler implements PIHandler {
 // Set of leechers and seeders in the P2P overlay
 private HashMap<String, BtWuwPeer> btLeechers;
 private HashMap<String, BtWuwPeer> btSeeders;
+private String[] currentPeerConnections;
 // Set of WUW instances
 private HashMap<String, Integer> wuwPeers;
 private String[] bestRankedKeys;
@@ -75,6 +76,7 @@ public Transaction[] giveContentUpdates() {
   // For getting a Python dictionary, the current implementation makes a local 
   // Java socket connection (port 5000) to a BitTorrent instance.
   String FromServer = null;
+  currentPeerConnections = null;
   Socket clientSocket;
   try {
     clientSocket = new Socket(Config.getValue("bittorrent", "bitTorrentHost"),
@@ -95,6 +97,7 @@ public Transaction[] giveContentUpdates() {
   System.out.println("Received dictionary from BitTorrent :: ");
   System.out.println(FromServer);
   BitTorrentStatistics bTstatistics = new BitTorrentStatistics(FromServer, wuwPeers);
+  currentPeerConnections = bTstatistics.getConnectionIps();
   bTstatistics.setLeftTransactionValues();
   Iterator<Entry<String, BitTorrentRequest>> it = bTstatistics.getbTstatistics()
       .entrySet().iterator();
@@ -210,14 +213,14 @@ public BtWuwPeer[] getPeersForAnnounce(){
     return null;
   }
   int i = 0;
-  int seedersNum = 0;
-  int leechersNum = 0;
+  int seedersNum = 2;
+  int leechersNum = 3;
   BtWuwPeer[] peers, seeders = null, leechers = null;
   ArrayList<BtWuwPeer> tempList;
   @SuppressWarnings("rawtypes")
   Iterator peerIt;
   if(btSeeders.size() != 0){
-    seedersNum = (int) Math.ceil( (3.0 * btSeeders.size()) / 10.0 );
+//  seedersNum = (int) Math.ceil( (3.0 * btSeeders.size()) / 10.0 );
     tempList = new ArrayList<BtWuwPeer>(btSeeders.size());
     peerIt = btSeeders.values().iterator();
     while(peerIt.hasNext())
@@ -225,7 +228,7 @@ public BtWuwPeer[] getPeersForAnnounce(){
     seeders =  choseRandomly(tempList.toArray(new BtWuwPeer[0]), seedersNum);
   }
   if(btLeechers.size() != 0){
-    leechersNum = (int) Math.ceil( btLeechers.size() / 10.0);
+//  leechersNum = (int) Math.ceil( btLeechers.size() / 10.0);
     tempList = new ArrayList<BtWuwPeer>(btLeechers.size());
     peerIt = btLeechers.values().iterator();
     while(peerIt.hasNext())
@@ -265,6 +268,17 @@ private static BtWuwPeer[] choseRandomly(BtWuwPeer[] source, int items){
     }
   }
   return result;
+}
+
+/*
+ * (non-Javadoc)
+ * @see wuw.pi.PIHandler#getCurrentPeerConnections()
+ */
+@Override
+public String[] getCurrentPeerConnections(){
+  if( currentPeerConnections.length == 0 )
+    return null;
+  return currentPeerConnections;
 }
 
 /**************************** TRACKER EMULATOR METHODS *******************************/
