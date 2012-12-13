@@ -50,4 +50,11 @@ public BtWuwPeer[] getBestRankedPeers();
  */
 public BtWuwPeer[] getPeersForAnnounce();
 
+/**
+ * 
+ * @return
+ * @author carvajal-r
+ */
+public String[] getCurrentPeerConnections();
+
 }
