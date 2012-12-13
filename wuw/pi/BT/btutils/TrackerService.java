@@ -122,7 +122,7 @@ public void process(Request req, Response resp) throws IOException {
     }
     if(peers != null){
       peerList = new ArrayList(peers.length);
-      System.out.println("PEER LIST TO BITTORRENT");
+      System.out.println("****PEER LIST TO BITTORRENT****");
       for(int i = 0; i < peers.length; i++){
         peer = new Peer();
         peer.setIP(peers[i].getIpAddress());
