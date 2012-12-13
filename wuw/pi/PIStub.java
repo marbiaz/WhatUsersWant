@@ -96,4 +96,10 @@ public BtWuwPeer[] getPeersForAnnounce() {
   return null;
 }
 
+@Override
+public String[] getCurrentPeerConnections(){
+  // TODO Auto-generated method stub
+  return null;
+}
+
 }
