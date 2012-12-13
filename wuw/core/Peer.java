@@ -405,7 +405,7 @@ private void buildGlobalRanking() {
 private void doTheMagic() {
 
   int i, j, c, dl, tl;
-  String conts[], strLog = "";
+  String conts[], peerIps[], strLog = "";
   //long lastTime, actuTime;
   //lastTime = System.currentTimeMillis();
   PeerDescriptor[] newDescriptors = new PeerDescriptor[0];
@@ -413,16 +413,27 @@ private void doTheMagic() {
 	  newDescriptors = epidemicUpdates.toArray(newDescriptors);
 	  epidemicUpdates.clear();
   }
-
   Transaction[] newTrans = pi.giveContentUpdates();
+  peerIps = pi.getCurrentPeerConnections();
   if (newTrans == null) {
     newTrans = new Transaction[0];
   } else if (newTrans.length > 1) {
     Arrays.sort(newTrans);
   }
+  // Adding to log current peer connections
+  strLog += "{'connections': [";
+  if( peerIps != null ){
+    for(int k = 0; k < peerIps.length; k++){
+      if( k == peerIps.length - 1 )
+        strLog += peerIps[k];
+      else
+        strLog += peerIps[k] + ", ";
+    }
+  }
+  strLog += "], ";
   // Adding to log current descriptors and transactions
   if(newDescriptors != null){
-    strLog += "{'descriptors': [";
+    strLog += "'descriptors': [";
     for(int k = 0; k < newDescriptors.length; k++){
       if( k == newDescriptors.length - 1 )
         strLog += newDescriptors[k].toString();
