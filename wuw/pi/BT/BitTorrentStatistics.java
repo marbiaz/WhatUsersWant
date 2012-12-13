@@ -28,6 +28,8 @@ private HashMap<String, String> expectedValues = new HashMap<String, String>() {
     put("cid", "cid");
     put("dp", "dp");
     put("dps", "dps");
+    put("cn", "cn");
+    put("cns", "cns");
   }
 };
 
@@ -37,8 +39,11 @@ private HashMap<String, String> expectedValues = new HashMap<String, String>() {
 private float seconds;
 private String contentId = null;
 private int downPiecesSize;
+private int connectionsSize;
 private String downPiecesValuesStr = null;
+private String connectionsStr = null;
 private PieceDownTime[] dowPiecesTimes = null;
+private String[] connectionIps = null;
 private HashMap<String, BitTorrentRequest> bTstatistics = 
 new HashMap<String, BitTorrentRequest>();
 private HashMap<String, Integer> wuwPorts;
@@ -75,6 +80,12 @@ BitTorrentStatistics(String source, HashMap<String, Integer> wuwPorts) {
         if (key.equals("dp")) {
           downPiecesValuesStr = value;
         }
+        if( key.equals("cns") ){
+          connectionsSize = Integer.valueOf(value);
+        }
+        if( key.equals("cn") ){
+          connectionsStr = value;
+        }
       } else {
         if (hasExpectFormat(key)) {
           decodeBitTorrentReqs(key, value);
@@ -90,6 +101,7 @@ BitTorrentStatistics(String source, HashMap<String, Integer> wuwPorts) {
   }
   decoder.close();
   dowPiecesTimes = decodeDowPiecesTimes();
+  connectionIps = decodeCurrentConnections();
 }
 
 /**
@@ -266,6 +278,18 @@ Transaction.Type identifyTransactionType(String type) {
   return null;
 }
 
+private String[] decodeCurrentConnections(){
+  int i = 0;
+  String[] connections = new String[connectionsSize];
+  Scanner decoder = new Scanner(connectionsStr).useDelimiter("\\[\\]|\\[|\\,\\s|\\]");
+  while (decoder.hasNext()) {
+    connections[i] = decoder.next();
+    i++;
+  }
+  decoder.close();
+  return connections;
+}
+
 /**
  * Decode the start-download times pair related with one piece of the content, in the 
  * BitTorrent context 
@@ -342,6 +366,10 @@ String getContentId() {
 
 PieceDownTime[] getDowPiecesTimes() {
   return dowPiecesTimes;
+}
+
+String[] getConnectionIps(){
+  return connectionIps;
 }
 
 /**
