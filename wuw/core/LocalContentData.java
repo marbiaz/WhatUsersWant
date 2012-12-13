@@ -36,6 +36,8 @@ private HashMap<Integer, Number[]> pacSatReminders;
 private HashMap<Integer, Number[]> pasSatReminders;
 private int pacUpdateCounter;
 private int pasUpdateCounter;
+private int downloadedPieces;
+private int uploadedPieces;
 
 
 LocalContentData(String id, int items, Category c, Interest i) {
@@ -47,6 +49,7 @@ LocalContentData(String id, int items, Category c, Interest i) {
   pasSysEval = Double.parseDouble(Config.getValue("localpeer", "pas_e"));
   pacSysEval = Double.parseDouble(Config.getValue("localpeer", "pac_e"));
   latest = null;
+  downloadedPieces = uploadedPieces = 0;
   pasUpdateCounter = 0;
   pacUpdateCounter = 0;
   pacSatReminders = new HashMap<Integer, Number[]>(
@@ -152,10 +155,12 @@ void updateFeedback() {
         if (pacSatReminders.containsKey(currItem)) {
           nums = pacSatReminders.get(currItem);
         } else {
-          nums = new Number[3];
+          nums = new Number[4];
           nums[0] = new Double(0.0);
           nums[1] = new Integer(0);
           nums[2] = new Integer(0);
+          // Useful for storage Sc[i] satisfaction per piece
+          nums[3] = new Double(0.0);
           pacSatReminders.put(currItem, nums);
         }
         nums[0] = nums[0].doubleValue() + s;
@@ -191,6 +196,8 @@ void updateFeedback() {
         s += v;
         if (t.getState() == State.DONE) {
           Config.addUnique(iTracker, tItem);
+          if(counter[tItem] != 0)
+            A += (sints[tItem] + counter[tItem] * 1.0) / (2.0 * counter[tItem]);
         }
       } else
         countWrong++;
@@ -199,33 +206,50 @@ void updateFeedback() {
               + ID + " item " + tItem + " is 0 !!!");
         System.err.flush();
       }
-      A += (sints[tItem] + counter[tItem]) / (2 * counter[tItem]);
+//      Adequation is computed just for complete pieces
+//      A += (sints[tItem] + counter[tItem]) / (2 * counter[tItem]);
     }
-    A = A / downloads.size();
+// In downloads there are transactions (DONE, ON, WRONG) for complete pieces or part of them
+// Adequations is focused in complete pieces
+//    A = A / downloads.size();
 
-    pacAdequation = (pacUpdateCounter < (1 / Peer.alpha)) ?
-        ((pacAdequation * (pacUpdateCounter - 1)) + A) / pacUpdateCounter
-        : ((1 - Peer.alpha) * pacAdequation) + (Peer.alpha * A);
     if (iTracker.size() > 0) {
+      countWrong = 0;
       for (i = 0; i < iTracker.size(); i++) {
         nums = pacSatReminders.remove(iTracker.get(i));
-        S += (nums[0].doubleValue() + nums[1].intValue() - nums[2].intValue())
-            / (2 * nums[1].intValue());
+//         According to the satisfaction formulas written in the paper S is not
+//         computed properly 
+//        S += (nums[0].doubleValue() + nums[1].intValue() - nums[2].intValue())
+//            / (2 * nums[1].intValue());
+        // Modification to formula
+        // Store S[i] in the nums data structure in order to plot how S[i] evolves 
+        // during in the downloading
+        countWrong = nums[2].intValue();
+        nums[3] = ( nums[0].doubleValue() + (nums[1].intValue() * 1.0) ) / ( 2.0 * (nums[1].intValue() + nums[2].intValue()) );
+        S += nums[3].doubleValue();
       }
-      S = S / iTracker.size();
-      pacSatisfaction = (pacUpdateCounter < (1 / Peer.alpha)) ?
-          ((pacSatisfaction * (pacUpdateCounter - 1)) + S) / pacUpdateCounter
-          : ((1 - Peer.alpha) * pacSatisfaction) + (Peer.alpha * S);
+      S = S / (iTracker.size() * 1.0);
+      A = A / ((iTracker.size() + countWrong) * 1.0);
+      pacSatisfaction = S;
+      pacAdequation = A;
+//      What is the aim of these formulas? they are not written in the paper
+//      pacAdequation = (pacUpdateCounter < (1 / Peer.alpha)) ?
+//          ((pacAdequation * (pacUpdateCounter - 1)) + A) / pacUpdateCounter
+//          : ((1 - Peer.alpha) * pacAdequation) + (Peer.alpha * A);
+//      pacSatisfaction = (pacUpdateCounter < (1 / Peer.alpha)) ?
+//          ((pacSatisfaction * (pacUpdateCounter - 1)) + S) / pacUpdateCounter
+//          : ((1 - Peer.alpha) * pacSatisfaction) + (Peer.alpha * S);
     }
-    pacSysEval = pacSatisfaction / pacAdequation;
-    if(Double.isNaN(pacSysEval))
+    downloadedPieces += iTracker.size();
+    if(pacAdequation != 0)
+      pacSysEval = pacSatisfaction / pacAdequation;
+    else
       pacSysEval = 0.0;
-    // TODO: add current pac feedback to a cumulative running average...
-
     iTracker.clear();
     downloads.clear();
   }
-
+// Here one piece could be shared more than one time. iTracker.size is not
+// used properly
   A = 0.0; S = 0.0; s = 0.0; currIndex = 0; countWrong = 0;
   if (uploads.size() > 0) { // compute pas feedback
     pasUpdateCounter++;
@@ -286,30 +310,39 @@ void updateFeedback() {
         }
       } else {
         countWrong++;
-      }
+      } 
       A += v;
     }
-    A = (A + uploads.size()) / (2 * uploads.size());
-
-    pasAdequation = (pasUpdateCounter < (1 / Peer.alpha)) ?
-        ((pasAdequation * (pasUpdateCounter - 1)) + A) / pasUpdateCounter
-        : ((1 - Peer.alpha) * pasAdequation) + (Peer.alpha * A);
+    if(uploads.size() != 0)
+      A = (A + uploads.size() * 1.0) / (uploads.size() * 2.0);
+    pasAdequation = A;
+//    pasAdequation = (pasUpdateCounter < (1 / Peer.alpha)) ?
+//        ((pasAdequation * (pasUpdateCounter - 1)) + A) / pasUpdateCounter
+//        : ((1 - Peer.alpha) * pasAdequation) + (Peer.alpha * A);
+    int sharedPieces = 0;
     if (iTracker.size() > 0) {
+      
       for (i = 0; i < iTracker.size(); i++) {
         nums = pasSatReminders.remove(iTracker.get(i));
-        S += (nums[0].doubleValue() + nums[1].intValue() - nums[2].intValue())
-            / (2 * nums[1].intValue());
+        // Print here nums DataEstructure for piece :: iTracker.get(i) 
+//        S += (nums[0].doubleValue() + nums[1].intValue() - nums[2].intValue())
+//            / (2 * nums[1].intValue());
+        S += (nums[0].doubleValue() + nums[1].intValue());
+        sharedPieces += nums[1].intValue();
       }
-      S = S / iTracker.size();
-      pasSatisfaction = (pasUpdateCounter < (1 / Peer.alpha)) ?
-          ((pasSatisfaction * (pasUpdateCounter - 1)) + S) / pasUpdateCounter
-          : ((1 - Peer.alpha) * pasSatisfaction) + (Peer.alpha * S);
+      S = S / (sharedPieces * 2.0);
+      pasSatisfaction = S;
+//      pasSatisfaction = (pasUpdateCounter < (1 / Peer.alpha)) ?
+//          ((pasSatisfaction * (pasUpdateCounter - 1)) + S) / pasUpdateCounter
+//          : ((1 - Peer.alpha) * pasSatisfaction) + (Peer.alpha * S);
     }
-    pasSysEval = pasSatisfaction / pasAdequation;
-    if(Double.isNaN(pasSysEval))
+    uploadedPieces += sharedPieces;
+    if(pasAdequation != 0)
+      pasSysEval = pasSatisfaction / pasAdequation;
+    else
       pasSysEval = 0.0;
     // TODO: add current pas feedback to a cumulative running average...
-
+    // This plot will be created when the local peer has the complete content
     iTracker.clear();
     uploads.clear();
   }
@@ -411,7 +444,8 @@ public String getLogString(){
 	String res = "";
 	res += "'pacAd': " + pacAdequation + ", 'pacSat': " + pacSatisfaction 
 	      + ", 'pasAd': " + pasAdequation + ", 'pasSat': " + pasSatisfaction 
-	      + ", 'pacSe': " + pacSysEval + ", 'pasSe': " + pasSysEval;
+	      + ", 'pacSe': " + pacSysEval + ", 'pasSe': " + pasSysEval
+	      + ", 'dowPi': " + downloadedPieces + ", 'uplPi': " + uploadedPieces;
 	return res;
 }
 
