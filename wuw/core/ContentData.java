@@ -25,6 +25,7 @@ import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
+import java.util.Map;
 
 
 /**
@@ -36,41 +37,41 @@ import java.util.Iterator;
 public class ContentData implements Comparable<Object>, Externalizable {
 //FIXME: this class should not be public....
 
-public static enum Interest {
-  UNKNOWN, NEGLIGIBLE, LOW, HIGH, PRIMARY
-}
-
-public static enum Category {
-  MOVIES, CARTOONS, NEWS, VIDEOCLIPS, MUSIC, BOOKS
-} // FIXME: the CDN should provide this!!
-
 
 String ID;
 int items;
 BitSet itemMap; // bitmap for this content
 ArrayList<Intention> intentions; // pas & pac intentions for this content
-Interest interest; // peer's interest in this content
-Category category;
 int version;
-PreferenceSet pasPrefs;
-PreferenceSet pacPrefs;
+PreferenceSet preferences;
 
 
 ContentData() {
+  ID = null;
+  items = -1;
+  itemMap = null;
   intentions = null;
+  version = -1;
+  preferences = null;
 }
 
 
-ContentData(String id, int items, Category c, Interest i) {
+ContentData(String id, int items, Map<String, String> preferences) {
   ID = id;
   this.items = items;
   itemMap = new BitSet(items);
-  interest = i;
-  category = c;
-  version = 0;
   intentions = new ArrayList<Intention>();
-  pasPrefs = new PreferenceSet();
-  pacPrefs = new PreferenceSet();
+  version = 0;
+  this.preferences = new PreferenceSet(preferences);
+}
+
+ContentData(String id, int items, PreferenceSet preferences) {
+  ID = id;
+  this.items = items;
+  itemMap = new BitSet(items);
+  intentions = new ArrayList<Intention>();
+  version = 0;
+  this.preferences = preferences;
 }
 
 
@@ -89,8 +90,6 @@ public void writeExternal(ObjectOutput out) throws IOException {
   out.writeInt(version);
   out.writeUTF(ID);
   out.writeInt(items);
-  out.writeUTF(interest.toString());
-  out.writeUTF(category.toString());
   byte[] b = itemMap.toByteArray();
   out.writeInt(b.length);
   out.write(b);
@@ -103,8 +102,11 @@ public void writeExternal(ObjectOutput out) throws IOException {
   } else {
     out.writeInt(0);
   }
-  pasPrefs.writeExternal(out);
-
+  if(Peer.sharePrefs){
+    preferences.writeExternal(out);
+  }else{
+    out.writeInt(0);
+  }
   out.flush();
 }
 
@@ -119,8 +121,6 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
   version = in.readInt();
   ID = in.readUTF();
   items = in.readInt();
-  interest = Interest.valueOf(in.readUTF());
-  category = Category.valueOf(in.readUTF());
   byte[] b = new byte[in.readInt()];
   in.readFully(b);
   itemMap = BitSet.valueOf(b);
@@ -140,8 +140,8 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
   if (intentions.size() == 0) {
     intentions.add(new Intention(null));
   }
-  pasPrefs = new PreferenceSet();
-  pasPrefs.readExternal(in);
+  preferences = new PreferenceSet();
+  preferences.readExternal(in);
 }
 
 ///*
@@ -163,9 +163,11 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
  * @see java.lang.Object#toString()
  */
 public String toString() {
-  String res = "('" + ID + "', '" + interest.toString() + "', " + 
-      Config.printList(intentions.toArray()) + ")";
-  return res;
+//  TODO: How to log the set of preferences (ContentData.preferences)?
+//  String res = "('" + ID + "', '" + interest.toString() + "', " + 
+//      Config.printList(intentions.toArray()) + ")";
+//  return res;
+  return null;
 }
 
 /*
