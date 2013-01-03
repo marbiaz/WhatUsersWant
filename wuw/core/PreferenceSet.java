@@ -23,9 +23,12 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
+import java.util.Map;
+import java.util.Scanner;
 
 
 /**
@@ -39,32 +42,80 @@ import java.util.Map.Entry;
  */
 class PreferenceSet implements Externalizable {
 
-LinkedHashMap<String, Object> prefs;
+  public class PrefEntry implements Externalizable{
+  
+    private String key;
+    private float value;
+    
+    public PrefEntry(){}
+  
+    public PrefEntry(String key, float value){
+      this.key = key;
+      this.value = value;
+    }
+  
+    
+    public String getKey() {
+      return key;
+    }
+  
+    
+    public float getValue() {
+      return value;
+    }
+    
+    public String toString(){
+      return "'" + key + "': " + Float.toString(value);
+    }
 
 
-public PreferenceSet() {
-  prefs = new LinkedHashMap<String, Object>();
+    @Override
+    public void readExternal(ObjectInput in) throws IOException {
+      // TODO Auto-generated method stub
+      key = in.readUTF();
+      value = in.readFloat();
+    }
+
+
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+      // TODO Auto-generated method stub
+      out.writeUTF(key);
+      out.writeFloat(value);
+      out.flush();
+    }
+  
+  }
+
+LinkedHashMap<String, PrefEntry[]> prefs;
+
+PreferenceSet(){
+  prefs = new LinkedHashMap<String, PrefEntry[]>();
 }
 
-
-PreferenceSet(String[] name, Object[] val) {
-  prefs = new LinkedHashMap<String, Object>();
-  for (int i = 0; i < name.length; i++) {
-    prefs.put(name[i], val[i]);
+PreferenceSet(Map<String, String> preferences){
+  prefs = new LinkedHashMap<String, PrefEntry[]>();
+  if(preferences.size() != 0){
+    String keyStr, valueStr;
+    PrefEntry[] value;
+    Entry<String, String> entry;
+    Iterator<Entry<String, String>> prefIte = preferences.entrySet().iterator();
+    while(prefIte.hasNext()){
+      entry = prefIte.next();
+      keyStr = entry.getKey();
+      valueStr = entry.getValue();
+      value = getVectorOfPrefs(valueStr);
+      prefs.put(keyStr, value);
+    }
   }
 }
 
 
-Object getValue(String name) {
+PrefEntry[] getValue(String name) {
   if (prefs.containsKey(name)) {
     return prefs.get(name);
   }
   return null;
-}
-
-
-void setValue(String name, Object value) {
-    prefs.put(name, value);
 }
 
 
@@ -75,18 +126,18 @@ void setValue(String name, Object value) {
  */
 @Override
 public void writeExternal(ObjectOutput out) throws IOException {
-  if (Peer.sharePrefs) {
-    int size = prefs.size();
-    out.writeInt(size);
-    Entry<String, Object> p;
-    Iterator<Entry<String, Object>> set = prefs.entrySet().iterator();
-    for (int i = 0; i < size; i++) {
-      p = set.next();
-      out.writeUTF(p.getKey());
-      out.writeObject(p.getValue());
-    }
-  } else {
-    out.writeInt(0);
+  int size = prefs.size();
+  out.writeInt(size);
+  PrefEntry[] vector;
+  Entry<String, PrefEntry[]> p;
+  Iterator<Entry<String, PrefEntry[]>> entryItera = prefs.entrySet().iterator();
+  while(entryItera.hasNext()){
+    p = entryItera.next();
+    out.writeUTF(p.getKey());
+    vector = p.getValue();
+    out.writeInt(vector.length);
+    for(int i = 0; i < vector.length; i++)
+      vector[i].writeExternal(out);
   }
   out.flush();
 }
@@ -99,24 +150,66 @@ public void writeExternal(ObjectOutput out) throws IOException {
  */
 @Override
 public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+  PrefEntry[] vector;
+  PrefEntry item;
+  int vectorLength;
   int size = in.readInt();
   String name;
   for (int i = 0; i < size; i++) {
     name = in.readUTF();
-    prefs.put(name, in.readObject());
+    vectorLength = in.readInt();
+    vector = new PrefEntry[vectorLength];
+    for(int j = 0; j < vectorLength; j++){
+      item = new PrefEntry();
+      item.readExternal(in);
+      vector[j] = item;
+    }
+    prefs.put(name, vector);
   }
 }
 
 
 public String toString() {
-  Iterator<Entry<String, Object>> it = prefs.entrySet().iterator();
-  Entry<String, Object> e;
-  String res = "";
+  int i, j = 0;
+  Iterator<Entry<String, PrefEntry[]>> it = prefs.entrySet().iterator();
+  Entry<String, PrefEntry[]> e;
+  PrefEntry[] value;
+  String res = "{", strTmp;
   while (it.hasNext()) {
     e = it.next();
-    res += "Label: " + e.getKey() + " -- Value: " + e.getValue().toString() + "\n";
+    res += "'" + e.getKey() + "': ";
+    value = e.getValue();
+    strTmp = "{";
+    for(i = 0; i < value.length; i++){
+      if(i != value.length - 1)
+        strTmp += value[i].toString() + ", ";
+      else
+        strTmp += value[i].toString() + "}";
+    }
+    if(j != prefs.size() -1)
+      res += strTmp + ", ";
+    else
+      res += strTmp + "}";
+    j++;
   }
   return res;
+}
+
+private PrefEntry[] getVectorOfPrefs(String entryStr){
+  PrefEntry[] result;
+  String pref;
+  PrefEntry item;
+  ArrayList<PrefEntry> tmp = new ArrayList<PrefEntry>();
+  Scanner decoder = new Scanner(entryStr).useDelimiter("\\[\\]|\\[|\\]|\\,\\s");
+  while(decoder.hasNext()){
+    pref = decoder.next();
+    item = new PrefEntry(pref, Config.rand.nextInt(11) * 0.1f);
+    tmp.add(item);
+  }
+  result = new PrefEntry[tmp.size()];
+  for(int i = 0; i < result.length; i++)
+    result[i] = tmp.get(i);
+  return result;
 }
 
 }
