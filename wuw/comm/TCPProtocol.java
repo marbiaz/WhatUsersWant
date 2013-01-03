@@ -101,8 +101,8 @@ private void receiverThread(Socket s) {
     }
     msg.readExternal(inStream);
 
-/**/if (printLogs) System.out.println("    TCP : Receiving message from " +
-        msg.getSource().toString() + " to " + pid.toString() + ".");
+/**/if (printLogs) System.out.println("\tTCP : Receiving message from " +
+        msg.getSource().toString() + ".");
     s.close();
 
     // forward the received message to the correct level protocol of local node.
