@@ -20,8 +20,6 @@ package wuw;
 
 
 import wuw.core.Config;
-import wuw.core.ContentData.Category;
-import wuw.core.ContentData.Interest;
 import wuw.core.PeerID;
 
 
@@ -60,8 +58,7 @@ public static void main(String[] args) throws InterruptedException {
       Config.getValue("config","globalPeerList"), true);
   Config.getLocalPeer().addContent(Config.getValue("content","id"), 
       Integer.parseInt(Config.getValue("content","pieces")), 
-      Category.valueOf(Config.getValue("preferences","Category")), 
-      Interest.valueOf(Config.getValue("preferences","Interest")) , neighs);
+      Config.getMapOfPreferences(), neighs);
   while ((System.currentTimeMillis() - start) < duration) {
     try {
       Thread.sleep(duration);
@@ -98,7 +95,7 @@ static public void TestOverlayConnection(String path) throws InterruptedExceptio
     last = l + middle + Config.rand.nextInt(middle);
     curr = new PeerID[last - first + 1];
     System.arraycopy(neighs, first, curr, 0, curr.length);
-    Config.getLocalPeer().addContent("Content" + i, 10, Category.MOVIES, Interest.PRIMARY, curr);
+    Config.getLocalPeer().addContent("Content" + i, 10, null, curr);
     Thread.sleep(10);
   }
   System.out.println(Config.printArray(Config.getLocalPeer().getContents()));
