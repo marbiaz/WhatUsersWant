@@ -24,10 +24,12 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import wuw.pi.Transaction;
 import wuw.pi.Transaction.State;
 import wuw.pi.Transaction.Type;
+import wuw.core.PreferenceSet.PrefEntry;
 
 
 /**
@@ -56,8 +58,8 @@ private int downloadedPieces;
 private int uploadedPieces;
 
 
-LocalContentData(String id, int items, Category c, Interest i) {
-  super(id, items, c, i);
+LocalContentData(String id, int items, Map<String, String> preferences) {
+  super(id, items, preferences);
   pasSatisfaction = Double.parseDouble(Config.getValue("localpeer", "pas_s")); // XXX: these are the default to express
   pacSatisfaction = Double.parseDouble(Config.getValue("localpeer", "pac_s")); // a 'neutral' judgment,
   pasAdequation = Double.parseDouble(Config.getValue("localpeer", "pas_a")); //   but attention should be payed
@@ -372,7 +374,6 @@ void updateFeedback() {
  * along with the percentage of successful transactions retrieved 
  * by the latest call to pi.getContentUpdates().
  * The preferences of the users are totally ignored.
- */
 void computeIntentions() {
   String strLog = "'intentions': [";
   Intention intent; double pas, pac, pref;
@@ -434,6 +435,36 @@ void computeIntentions() {
   }
   Config.logger.updateLogLine(strLog);
 }
+*/
+
+void computeIntentions() {
+  String strLog = "'intentions': [";
+  Intention intent; Neighbor n;
+  NeighborContentData ncd; PreferenceSet neighPrefs;
+  for (int i = 0; i < intentions.size(); i++) {
+    intent = intentions.get(i);
+    n = intent.remote;
+    ncd = n.getContent(ID);
+    neighPrefs = ncd.contentInfo.preferences;
+    if(neighPrefs != null){
+      intent.pacIntent = computeMappingFunction(neighPrefs);
+      intent.pasIntent = -1;
+    }else{
+      intent.pacIntent = -1;
+      intent.pasIntent = -1;
+    }
+    if(i != intentions.size() -1){
+      strLog += "{'neighbor': '" + n.ID != null ? n.ID.toString() : "remote" + "', 'prefs': " + 
+          neighPrefs != null ? neighPrefs.toString() : "{}" + ", 'pacInt': " + 
+          intent.pacIntent + ", 'pasInt': " + intent.pasIntent + "}, ";
+    }else{
+      strLog += "{'neighbor': '" + n.ID != null ? n.ID.toString() : "remote" + "', 'prefs': " + 
+          neighPrefs != null ? neighPrefs.toString() : "{}" + ", 'pacInt': " + 
+          intent.pacIntent + ", 'pasInt': " + intent.pasIntent + "}], ";
+    } 
+  }
+  Config.logger.updateLogLine(strLog);
+}
 
 
 public String toString() {
@@ -463,6 +494,49 @@ public String getLogString(){
 	      + ", 'pacSe': " + pacSysEval + ", 'pasSe': " + pasSysEval
 	      + ", 'dowPi': " + downloadedPieces + ", 'uplPi': " + uploadedPieces;
 	return res;
+}
+
+private double computeMappingFunction(PreferenceSet neighPrefs){
+  PrefEntry[] localVecPref, neighVecPref;
+  int numEqPrefs = 0;
+  double intention = 0.0;
+  String key;
+  Iterator<String> keyIter = preferences.prefs.keySet().iterator();
+  while(keyIter.hasNext()){
+    key = keyIter.next();
+    if(neighPrefs.prefs.containsKey(key)){
+      localVecPref = preferences.prefs.get(key);
+      neighVecPref = neighPrefs.prefs.get(key);
+      intention += getCosineSimilatiryMeasure(localVecPref, neighVecPref);
+      numEqPrefs++;
+    }
+  }
+  if(intention == 0.0)
+    return 0.0;
+  return (intention) / (numEqPrefs * 1.0);
+}
+
+private double getCosineSimilatiryMeasure(PrefEntry[] localVecPref, PrefEntry[] neighVecPref){
+  int i;
+  double sum = 0.0, sumSqrLocal = 0.0, sumSqrNeigh = 0.0;
+  String localPref, neighPref;
+  for(i = 0; i < localVecPref.length; i++){
+    localPref = localVecPref[i].getKey(); 
+    for(int j = 0; j < neighVecPref.length; j ++){
+      neighPref = neighVecPref[j].getKey();
+      if(localPref.equalsIgnoreCase(neighPref)){
+        sum += localVecPref[i].getValue() * neighVecPref[j].getValue();
+        break;
+      }
+    }
+  }
+  if(sum == 0.0)
+    return 0.0;
+  for(i = 0; i < localVecPref.length; i ++)
+    sumSqrLocal += Math.pow(localVecPref[i].getValue(), 2);
+  for(i = 0; i < neighVecPref.length; i ++)
+    sumSqrNeigh += Math.pow(neighVecPref[i].getValue(), 2);
+  return (sum) / ( (Math.sqrt(sumSqrLocal)) * (Math.sqrt(sumSqrNeigh)));
 }
 
 }
