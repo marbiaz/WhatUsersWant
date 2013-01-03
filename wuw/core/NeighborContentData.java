@@ -21,7 +21,6 @@ package wuw.core;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import wuw.core.ContentData.Interest;
 import wuw.pi.Transaction;
 import wuw.pi.Transaction.State;
 import wuw.pi.Transaction.Type;
@@ -41,7 +40,7 @@ ArrayList<Transaction> uploads; // local peer's outgoing transactions with this 
 
 
 NeighborContentData(ContentData c) {
-  contentInfo = new ContentData(c.ID, c.items, c.category, c.interest);
+  contentInfo = new ContentData(c.ID, c.items, c.preferences);
   downloads = uploads = null;
 }
 
@@ -50,7 +49,7 @@ void init() {
   if (downloads == null) {
     downloads = new ArrayList<Transaction>();
     uploads = new ArrayList<Transaction>();
-    contentInfo.interest = Interest.UNKNOWN;
+    contentInfo.preferences = null;
     contentInfo.version = -1;
     contentInfo.intentions = new ArrayList<Intention>(1);
     contentInfo.intentions.add(new Intention(null));
@@ -84,6 +83,7 @@ void addTransaction(Transaction t) {
 
 boolean update(ContentData c) {
   if (c.version > contentInfo.version) {
+//  Why OR operation if contentInfo is replace by c?
     c.itemMap.or(contentInfo.itemMap);
     contentInfo = c;
     return true;
