@@ -307,7 +307,6 @@ public static boolean editConfigFile(String xmlFile, String[] args){
     root.getChild("localpeer").getChild("portNumber").setText(args[5]);
     root.getChild("faketracker").getChild("portNumber").setText(args[6]);
     root.getChild("bittorrent").getChild("bitTorrentPort").setText(args[7]);
-    root.getChild("preferences").getChild("Interest").setText(args[8]);
     XMLOutputter xmlOutput = new XMLOutputter();
     xmlOutput.setFormat(Format.getPrettyFormat());
     xmlOutput.output(conf, new FileWriter(xmlFile));
@@ -388,6 +387,15 @@ public static String getValue(String children, String param){
     System.err.println("Error: item '" + children + "' does not exists " +
         "in XML configuration file");
   return strResult;
+}
+
+/**
+ * Get the set of preferences
+ * @return Map of preferences
+ */
+@SuppressWarnings("unchecked")
+public static Map<String, String> getMapOfPreferences(){
+  return (Map<String, String>)configParam.get("preferences");
 }
 
 }
