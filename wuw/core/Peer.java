@@ -27,11 +27,10 @@ import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.Map;
 
 import wuw.comm.CommHandler;
 import wuw.comm.newscast.Newscast;
-import wuw.core.ContentData.Category;
-import wuw.core.ContentData.Interest;
 import wuw.pi.Transaction;
 import wuw.pi.PIHandler;
 import wuw.ui.UIHandler;
@@ -214,7 +213,7 @@ public Object getDescriptor() {
  * @return <code>true</code> if the given content is added; <code>false</code>
  *         if it was already in the list.
  */
-public boolean addContent(String id, int items, Category cat, Interest interest, PeerID[] peerList) {
+public boolean addContent(String id, int items, Map<String, String> preferences, PeerID[] peerList) {
   PeerID remote;
   Neighbor n;
   LocalContentData c;
@@ -226,7 +225,7 @@ public boolean addContent(String id, int items, Category cat, Interest interest,
   synchronized (updateLock) {
     c = myContents.getContent(id);
     if (c == null) {
-      c = new LocalContentData(id, items, cat, interest);
+      c = new LocalContentData(id, items, preferences);
       contents = myContents.addContent(c);
       ui.initFeedback(id, UIHandler.feedback_measures, UIHandler.feedback_defaults);
       res = true;
@@ -315,11 +314,11 @@ private void makeDescriptor() {
  */
 private double scoreNeigh(Intention myIntent, Intention nIntent) {
   double res;
-  res = myIntent.pacIntent + nIntent.pasIntent;
-  res += myIntent.pasIntent + nIntent.pacIntent;
+  res = pref_weight * myIntent.pacIntent + (1 - pref_weight) * nIntent.pacIntent;
+//  res += myIntent.pasIntent + nIntent.pacIntent;
   // res = (selfishness * myIntent.pacIntent) + ((1 - selfishness) * nIntent.pasIntent);
   // res += (selfishness * myIntent.pasIntent) + ((1 - selfishness) * nIntent.pacIntent);
-  return res / 4.0;
+  return res / 2.0;
 }
 
 
@@ -408,7 +407,7 @@ private void buildGlobalRanking() {
     if(rankedArr != null){
       for(int i = 0; i < rankedArr.length; i++){
         if( i == rankedArr.length - 1 )
-          strLog += "('" + rankedArr[i].peer.toString() + "', " + rankedArr[i].score + ")";
+          strLog += "('" + rankedArr[i].peer.toString() + "', " + rankedArr[i].score + ")]";
         else
           strLog += "('" + rankedArr[i].peer.toString() + "', " + rankedArr[i].score + "), ";
       }
@@ -447,25 +446,26 @@ private void doTheMagic() {
     }
   }
   strLog += "], ";
-  // Adding to log current descriptors and transactions
-  if(newDescriptors != null){
-    strLog += "'descriptors': [";
-    for(int k = 0; k < newDescriptors.length; k++){
-      if( k == newDescriptors.length - 1 )
-        strLog += newDescriptors[k].toString();
-      else
-        strLog += newDescriptors[k].toString() + ", ";
-    }
-    strLog += "], 'transactions': [";
-    for(int k = 0; k < newTrans.length; k++){
-      if( k == newTrans.length - 1 )
-        strLog += newTrans[k].toString();
-      else
-        strLog += newTrans[k].toString() + ", ";
-    }
-    strLog += "], ";
-    Config.logger.updateLogLine(strLog);
-  }
+  Config.logger.updateLogLine(strLog);
+// Adding to log current descriptors and transactions
+//  if(newDescriptors != null){
+//    strLog += "'descriptors': [";
+//    for(int k = 0; k < newDescriptors.length; k++){
+//      if( k == newDescriptors.length - 1 )
+//        strLog += newDescriptors[k].toString();
+//      else
+//        strLog += newDescriptors[k].toString() + ", ";
+//    }
+//    strLog += "], 'transactions': [";
+//    for(int k = 0; k < newTrans.length; k++){
+//      if( k == newTrans.length - 1 )
+//        strLog += newTrans[k].toString();
+//      else
+//        strLog += newTrans[k].toString() + ", ";
+//    }
+//    strLog += "], ";
+//    Config.logger.updateLogLine(strLog);
+//  }
 /**/if (printLogs) {
   System.out.println("New transactions :\n" + Config.printArray(newTrans));
   }
@@ -581,7 +581,7 @@ private void doTheMagic() {
 /**/System.err.println("Peer: ATTENTION: local peer's card not sent due to previous errors.");
     System.err.flush();
   }
-  strLog = "]}&[";
+  strLog = "}&[";
   String[] contentIds = myContents.getIDs();
   LocalContentData actCont = null;
   // Adding to log information about contents and WUW memory usage
