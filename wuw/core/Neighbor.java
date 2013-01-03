@@ -114,7 +114,7 @@ void update(ContentData c, Transaction t, long tstamp) {
 //TODO: add a mechanism to delete some contents the neigh no longer wants to share
 // something like : the descr. contains a negative version number whose
 // absolute value is higher than the current one, thus the content must be deleted.
-// ISSUE: how long must the neigh spread a descriptor with such a version number?
+// ISSUE: how long must the neigh spread a descriptor with each version number?
 boolean update(PeerDescriptor d, long tstamp, String[] conts) {
   NeighborContentData nc = null;
   boolean newer = false; int i;
