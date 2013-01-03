@@ -45,7 +45,7 @@ Intention() {
 
 Intention(Neighbor p) {
   remote = p;
-  pasIntent = pacIntent = 0.0;
+  pasIntent = pacIntent = -1.0;
 }
 
 
