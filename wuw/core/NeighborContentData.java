@@ -83,7 +83,6 @@ void addTransaction(Transaction t) {
 
 boolean update(ContentData c) {
   if (c.version > contentInfo.version) {
-//  Why OR operation if contentInfo is replace by c?
     c.itemMap.or(contentInfo.itemMap);
     contentInfo = c;
     return true;
