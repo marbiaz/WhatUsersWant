@@ -318,7 +318,7 @@ private double scoreNeigh(Intention myIntent, Intention nIntent) {
 //  res += myIntent.pasIntent + nIntent.pacIntent;
   // res = (selfishness * myIntent.pacIntent) + ((1 - selfishness) * nIntent.pasIntent);
   // res += (selfishness * myIntent.pasIntent) + ((1 - selfishness) * nIntent.pacIntent);
-  return res / 2.0;
+  return res;
 }
 
 
@@ -335,7 +335,7 @@ private void buildGlobalRanking() {
   ArrayList<Intention> intents;
   Intention nintent;
   int pos, csize = myContents.size();
-  String cIDs[] = myContents.getIDs(), strLog = "'rankedPeers': [";
+  String cIDs[] = myContents.getIDs(), strLog = "'rankedPeers': {";
   RankedPeer curr;
   ArrayList<PeerID> neighborhood;
   HashMap<String, ArrayList<PeerID>> neighborhoods =
@@ -407,12 +407,13 @@ private void buildGlobalRanking() {
     if(rankedArr != null){
       for(int i = 0; i < rankedArr.length; i++){
         if( i == rankedArr.length - 1 )
-          strLog += "('" + rankedArr[i].peer.toString() + "', " + rankedArr[i].score + ")]";
+          strLog += "'" + rankedArr[i].peer.ip.getHostAddress() + "': " + rankedArr[i].score;
         else
-          strLog += "('" + rankedArr[i].peer.toString() + "', " + rankedArr[i].score + "), ";
+          strLog += "'" + rankedArr[i].peer.ip.getHostAddress() + "': " + rankedArr[i].score + ", ";
       }
     }
   }
+  strLog += "}";
   Config.logger.updateLogLine(strLog);
 }
 
@@ -437,7 +438,7 @@ private void doTheMagic() {
   }
   // Adding to log current peer connections
   strLog += "{'connections': [";
-  if( peerIps != null ){
+  if( peerIps != null){
     for(int k = 0; k < peerIps.length; k++){
       if( k == peerIps.length - 1 )
         strLog += peerIps[k];
