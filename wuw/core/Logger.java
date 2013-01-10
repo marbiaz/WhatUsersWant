@@ -68,6 +68,16 @@ public void writeCurrentLogLine(){
   }
 }
 
+public void writeLine(String line){
+  try {
+    logFile.write(line + "\n");
+    logFile.flush();
+  } catch (IOException e) {
+    // TODO Auto-generated catch block
+    e.printStackTrace();
+  }
+}
+
 public void resetLogLine(){
   actualLogLine = "";
 }
