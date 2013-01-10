@@ -65,7 +65,7 @@ class PreferenceSet implements Externalizable {
     }
     
     public String toString(){
-      return "'" + key + "': " + Float.toString(value);
+      return "('" + key + "', " + Float.toString(value) + ")";
     }
 
 
@@ -107,6 +107,7 @@ PreferenceSet(Map<String, String> preferences){
       value = getVectorOfPrefs(valueStr);
       prefs.put(keyStr, value);
     }
+    Config.logger.writeLine(this.toString()+"&{}&0&");
   }
 }
 
@@ -170,27 +171,37 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
 
 
 public String toString() {
-  int i, j = 0;
+  int k = 0, i;
   Iterator<Entry<String, PrefEntry[]>> it = prefs.entrySet().iterator();
   Entry<String, PrefEntry[]> e;
   PrefEntry[] value;
-  String res = "{", strTmp;
+  String res = "{";
   while (it.hasNext()) {
     e = it.next();
-    res += "'" + e.getKey() + "': ";
-    value = e.getValue();
-    strTmp = "{";
-    for(i = 0; i < value.length; i++){
-      if(i != value.length - 1)
-        strTmp += value[i].toString() + ", ";
-      else
-        strTmp += value[i].toString() + "}";
+    if(k != prefs.size() - 1){
+      res += "'" + e.getKey() + "': [";
+      value = e.getValue();
+      for(i = 0; i < value.length; i ++){
+        if(i != value.length - 1){
+          res += value[i].toString() + ", ";
+        }else{
+          res += value[i].toString() + "]";
+        }
+      }
+      res += ", ";
+    }else{
+      res += "'" + e.getKey() + "': [";
+      value = e.getValue();
+      for(i = 0; i < value.length; i ++){
+        if(i != value.length - 1){
+          res += value[i].toString() + ", ";
+        }else{
+          res += value[i].toString() + "]";
+        }
+      }
+      res += "}";
     }
-    if(j != prefs.size() -1)
-      res += strTmp + ", ";
-    else
-      res += strTmp + "}";
-    j++;
+    k++;
   }
   return res;
 }
