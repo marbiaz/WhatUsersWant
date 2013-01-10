@@ -144,32 +144,6 @@ public void readExternal(ObjectInput in) throws IOException, ClassNotFoundExcept
   preferences.readExternal(in);
 }
 
-///*
-// * (non-Javadoc)
-// * @see java.lang.Object#toString()
-// */
-//public String toString() {
-//  String res = ID + " (" + items + " items)"
-//      + " - version " + version + " -- Category : " + category.toString()
-//      + "\nItemMap : " + itemMap.toString() + "\nInterest : " + interest.toString()
-//      + "\nIntentions:\n" + Config.printArray(intentions.toArray())
-//      + "Pas preferences:\n" + pasPrefs.toString()
-//      + "Pac preferences:" + (pacPrefs == null ? " unknown.\n" : "\n" + pacPrefs.toString());
-//  return res;
-//}
-
-/*
- * (non-Javadoc)
- * @see java.lang.Object#toString()
- */
-public String toString() {
-//  TODO: How to log the set of preferences (ContentData.preferences)?
-//  String res = "('" + ID + "', '" + interest.toString() + "', " + 
-//      Config.printList(intentions.toArray()) + ")";
-//  return res;
-  return null;
-}
-
 /*
  * (non-Javadoc)
  * 
