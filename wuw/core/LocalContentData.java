@@ -438,7 +438,7 @@ void computeIntentions() {
 */
 
 void computeIntentions() {
-  String strLog = "'intentions': [";
+  String tmp1, tmp2, strLog = "'intentions': {";
   Intention intent; Neighbor n;
   NeighborContentData ncd; PreferenceSet neighPrefs;
   for (int i = 0; i < intentions.size(); i++) {
@@ -453,16 +453,21 @@ void computeIntentions() {
       intent.pacIntent = -1;
       intent.pasIntent = -1;
     }
-    if(i != intentions.size() -1){
-      strLog += "{'neighbor': '" + n.ID != null ? n.ID.toString() : "remote" + "', 'prefs': " + 
-          neighPrefs != null ? neighPrefs.toString() : "{}" + ", 'pacInt': " + 
-          intent.pacIntent + ", 'pasInt': " + intent.pasIntent + "}, ";
+    if(i != intentions.size() - 1){
+      tmp1 = n.ID != null ? "'" + n.ID.ip.getHostAddress() + "': {" : "'?': {";
+      strLog += tmp1;
+//      tmp2 = neighPrefs != null ? neighPrefs.toString() + ", " : "{}, ";
+//      strLog += "'prefs': " + tmp2;
+      strLog += "'pacInt': " + intent.pacIntent + ", 'pasInt': " + intent.pasIntent + "}, ";
     }else{
-      strLog += "{'neighbor': '" + n.ID != null ? n.ID.toString() : "remote" + "', 'prefs': " + 
-          neighPrefs != null ? neighPrefs.toString() : "{}" + ", 'pacInt': " + 
-          intent.pacIntent + ", 'pasInt': " + intent.pasIntent + "}], ";
-    } 
+      tmp1 = n.ID != null ? "'" + n.ID.ip.getHostAddress() + "': {" : "'?': {";
+      strLog += tmp1;
+//      tmp2 = neighPrefs != null ? neighPrefs.toString() + ", " : "{}, ";
+//      strLog += "'prefs': " + tmp2;
+      strLog += "'pacInt': " + intent.pacIntent + ", 'pasInt': " + intent.pasIntent + "}";
+    }
   }
+  strLog += "}, ";
   Config.logger.updateLogLine(strLog);
 }
 
@@ -505,9 +510,19 @@ private double computeMappingFunction(PreferenceSet neighPrefs){
   while(keyIter.hasNext()){
     key = keyIter.next();
     if(neighPrefs.prefs.containsKey(key)){
+      System.out.println("Preference :: " + key);
       localVecPref = preferences.prefs.get(key);
+      System.out.print("Local Vector :: ");
+      for(int i = 0; i < localVecPref.length; i++)
+        System.out.print(localVecPref[i].toString() + ", ");
+      System.out.println();
       neighVecPref = neighPrefs.prefs.get(key);
+      System.out.print("Neighbor's Vector :: ");
+      for(int i = 0; i < neighVecPref.length; i++)
+        System.out.print(neighVecPref[i].toString() + ", ");
+      System.out.println();
       intention += getCosineSimilatiryMeasure(localVecPref, neighVecPref);
+      System.out.println("IntentionSum :: " + intention);
       numEqPrefs++;
     }
   }
