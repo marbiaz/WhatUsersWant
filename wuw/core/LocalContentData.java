@@ -54,8 +54,8 @@ private HashMap<Integer, Number[]> pacSatReminders;
 private HashMap<Integer, Number[]> pasSatReminders;
 private int pacUpdateCounter;
 private int pasUpdateCounter;
-private int downloadedPieces;
-private int uploadedPieces;
+private int downloadedItems;
+private int uploadedItems;
 
 
 LocalContentData(String id, int items, Map<String, String> preferences) {
@@ -67,7 +67,7 @@ LocalContentData(String id, int items, Map<String, String> preferences) {
   pasSysEval = Double.parseDouble(Config.getValue("localpeer", "pas_e"));
   pacSysEval = Double.parseDouble(Config.getValue("localpeer", "pac_e"));
   latest = null;
-  downloadedPieces = uploadedPieces = 0;
+  downloadedItems = uploadedItems = 0;
   pasUpdateCounter = 0;
   pacUpdateCounter = 0;
   pacSatReminders = new HashMap<Integer, Number[]>(
@@ -145,7 +145,7 @@ void updateFeedback() {
   double A = 0.0, S = 0.0, s = 0.0, v;
   int i, tItem = -1, currItem, currIndex = 0, countWrong = 0;
   Number[] nums; Intention intent;
-  ArrayList<Integer> iTracker = new ArrayList<Integer>();
+  ArrayList<Integer> iTracker = new ArrayList<Integer>(); // completed items
   if (downloads.size() > 0) { // compute pac feedback
     pacUpdateCounter++;
     int[] counter = new int[items]; // for each item, how many seeders
@@ -173,12 +173,10 @@ void updateFeedback() {
         if (pacSatReminders.containsKey(currItem)) {
           nums = pacSatReminders.get(currItem);
         } else {
-          nums = new Number[4];
-          nums[0] = new Double(0.0);
-          nums[1] = new Integer(0);
-          nums[2] = new Integer(0);
-          // Useful for storage Sc[i] satisfaction per piece
-          nums[3] = new Double(0.0);
+          nums = new Number[3];
+          nums[0] = new Double(0.0); // intentions related to an item
+          nums[1] = new Integer(0); // number of transaction related to an item
+          nums[2] = new Integer(0); // number of wrong transaction related to an item
           pacSatReminders.put(currItem, nums);
         }
         nums[0] = nums[0].doubleValue() + s;
@@ -214,8 +212,6 @@ void updateFeedback() {
         s += v;
         if (t.getState() == State.DONE) {
           Config.addUnique(iTracker, tItem);
-          if(counter[tItem] != 0)
-            A += (sints[tItem] + counter[tItem] * 1.0) / (2.0 * counter[tItem]);
         }
       } else
         countWrong++;
@@ -224,50 +220,32 @@ void updateFeedback() {
               + ID + " item " + tItem + " is 0 !!!");
         System.err.flush();
       }
-//      Adequation is computed just for complete pieces
-//      A += (sints[tItem] + counter[tItem]) / (2 * counter[tItem]);
+      A += (sints[tItem] + counter[tItem]) / (2 * counter[tItem]);
     }
-// In downloads there are transactions (DONE, ON, WRONG) for complete pieces or part of them
-// Adequations is focused in complete pieces
-//    A = A / downloads.size();
-
+    A = A / downloads.size();
+    pacAdequation = (pacUpdateCounter < (1 / Peer.alpha)) ?
+        ((pacAdequation * (pacUpdateCounter - 1)) + A) / pacUpdateCounter
+        : ((1 - Peer.alpha) * pacAdequation) + (Peer.alpha * A);
     if (iTracker.size() > 0) {
-      countWrong = 0;
       for (i = 0; i < iTracker.size(); i++) {
         nums = pacSatReminders.remove(iTracker.get(i));
-//         According to the satisfaction formulas written in the paper S is not
-//         computed properly 
-//        S += (nums[0].doubleValue() + nums[1].intValue() - nums[2].intValue())
-//            / (2 * nums[1].intValue());
-        // Modification to formula
-        // Store S[i] in the nums data structure in order to plot how S[i] evolves 
-        // during in the downloading
-        countWrong = nums[2].intValue();
-        nums[3] = ( nums[0].doubleValue() + (nums[1].intValue() * 1.0) ) / ( 2.0 * (nums[1].intValue() + nums[2].intValue()) );
-        S += nums[3].doubleValue();
+        S += (nums[0].doubleValue() + nums[1].intValue() - nums[2].intValue())
+            / (2.0 * nums[1].intValue());
       }
       S = S / (iTracker.size() * 1.0);
-      A = A / ((iTracker.size() + countWrong) * 1.0);
-      pacSatisfaction = S;
-      pacAdequation = A;
-//      What is the aim of these formulas? they are not written in the paper
-//      pacAdequation = (pacUpdateCounter < (1 / Peer.alpha)) ?
-//          ((pacAdequation * (pacUpdateCounter - 1)) + A) / pacUpdateCounter
-//          : ((1 - Peer.alpha) * pacAdequation) + (Peer.alpha * A);
-//      pacSatisfaction = (pacUpdateCounter < (1 / Peer.alpha)) ?
-//          ((pacSatisfaction * (pacUpdateCounter - 1)) + S) / pacUpdateCounter
-//          : ((1 - Peer.alpha) * pacSatisfaction) + (Peer.alpha * S);
+      pacSatisfaction = (pacUpdateCounter < (1 / Peer.alpha)) ?
+          ((pacSatisfaction * (pacUpdateCounter - 1)) + S) / pacUpdateCounter
+          : ((1 - Peer.alpha) * pacSatisfaction) + (Peer.alpha * S);
     }
-    downloadedPieces += iTracker.size();
-    if(pacAdequation != 0)
+    downloadedItems += iTracker.size();
+    if (pacAdequation != 0)
       pacSysEval = pacSatisfaction / pacAdequation;
     else
       pacSysEval = 0.0;
     iTracker.clear();
     downloads.clear();
   }
-// Here one piece could be shared more than one time. iTracker.size is not
-// used properly
+
   A = 0.0; S = 0.0; s = 0.0; currIndex = 0; countWrong = 0;
   if (uploads.size() > 0) { // compute pas feedback
     pasUpdateCounter++;
@@ -325,42 +303,35 @@ void updateFeedback() {
         }
         if (t.getState() == State.DONE) {
           Config.addUnique(iTracker, tItem);
+          uploadedItems++;
         }
       } else {
         countWrong++;
       } 
       A += v;
     }
-    if(uploads.size() != 0)
-      A = (A + uploads.size() * 1.0) / (uploads.size() * 2.0);
+    A = (A + uploads.size() * 1.0) / (uploads.size() * 2.0);
     pasAdequation = A;
-//    pasAdequation = (pasUpdateCounter < (1 / Peer.alpha)) ?
-//        ((pasAdequation * (pasUpdateCounter - 1)) + A) / pasUpdateCounter
-//        : ((1 - Peer.alpha) * pasAdequation) + (Peer.alpha * A);
-    int sharedPieces = 0;
+    pasAdequation = (pasUpdateCounter < (1 / Peer.alpha)) ?
+        ((pasAdequation * (pasUpdateCounter - 1)) + A) / pasUpdateCounter
+        : ((1 - Peer.alpha) * pasAdequation) + (Peer.alpha * A);
     if (iTracker.size() > 0) {
-      
       for (i = 0; i < iTracker.size(); i++) {
-        nums = pasSatReminders.remove(iTracker.get(i));
-        // Print here nums DataEstructure for piece :: iTracker.get(i) 
-//        S += (nums[0].doubleValue() + nums[1].intValue() - nums[2].intValue())
-//            / (2 * nums[1].intValue());
+        nums = pasSatReminders.remove(iTracker.get(i)); 
+        S += (nums[0].doubleValue() + nums[1].intValue() - nums[2].intValue())
+            / (2.0 * (nums[1].intValue() - nums[2].intValue()));
         S += (nums[0].doubleValue() + nums[1].intValue());
-        sharedPieces += nums[1].intValue();
       }
-      S = S / (sharedPieces * 2.0);
-      pasSatisfaction = S;
-//      pasSatisfaction = (pasUpdateCounter < (1 / Peer.alpha)) ?
-//          ((pasSatisfaction * (pasUpdateCounter - 1)) + S) / pasUpdateCounter
-//          : ((1 - Peer.alpha) * pasSatisfaction) + (Peer.alpha * S);
+      S = S / iTracker.size();
+      pasSatisfaction = (pasUpdateCounter < (1 / Peer.alpha)) ?
+          ((pasSatisfaction * (pasUpdateCounter - 1)) + S) / pasUpdateCounter
+          : ((1 - Peer.alpha) * pasSatisfaction) + (Peer.alpha * S);
     }
-    uploadedPieces += sharedPieces;
-    if(pasAdequation != 0)
+    if (pasAdequation != 0)
       pasSysEval = pasSatisfaction / pasAdequation;
     else
       pasSysEval = 0.0;
     // TODO: add current pas feedback to a cumulative running average...
-    // This plot will be created when the local peer has the complete content
     iTracker.clear();
     uploads.clear();
   }
@@ -368,75 +339,13 @@ void updateFeedback() {
 
 
 /*
- * A quite trivial implementation of what we call a 'strategy'.
+ * A quite trivial way to compute intentions.
  * For each neighbor, only the difference between local and remote 
  * peer's expressed interest in the content is taken into account,
  * along with the percentage of successful transactions retrieved 
  * by the latest call to pi.getContentUpdates().
  * The preferences of the users are totally ignored.
-void computeIntentions() {
-  String strLog = "'intentions': [";
-  Intention intent; double pas, pac, pref;
-  NeighborContentData ncd; Neighbor n;
-  Transaction t; Iterator<Transaction> tit;
-  for (int i = 0; i < intentions.size(); i++) {
-    intent = intentions.get(i);
-    n = intent.remote;
-    ncd = n.getContent(ID);
-    pas = 0; pac = 0; pref = 0.0;
-    // prefs : similarity between interest in the content
-    pref = (-1.0) * Math.abs(ncd.contentInfo.interest.ordinal() - interest.ordinal());
-    // change interval from [-4..0] to [-1..1] : (X-A)/(B-A)*(D-C)+C
-    pref = (pref / 2.0) + 1;
-    // reputation : good transactions / total transactions
-    if (ncd.downloads != null && ncd.downloads.size() > 0) {
-      tit = ncd.downloads.iterator();
-      while (tit.hasNext()) {
-        t = tit.next();
-        if (t.getState() != State.WRONG) {
-          pac++;
-        }
-      }
-      pac = pac / ncd.downloads.size();
-      ncd.downloads.clear();
-    }
-    // pac intention : W*pref + (1 - W)*rep
-    // change interval from [0..1] to [-1..1] : (X-A)/(B-A)*(D-C)+C
-    pac = (pac * 2) - 1;
-    // Original way of compute intentions (client)
-    intent.pacIntent = (Peer.pref_weight * pref) + ((1 - Peer.pref_weight) * pac);
-    if (ncd.uploads != null && ncd.uploads.size() > 0) {
-      tit = ncd.uploads.iterator();
-      while (tit.hasNext()) {
-        t = tit.next();
-        if (t.getState() != State.WRONG) {
-          pas++;
-        }
-      }
-      pas = pas / ncd.uploads.size();
-      ncd.uploads.clear();
-    }
-    // change interval from [0..1] to [-1..1] : (X-A)/(B-A)*(D-C)+C
-    pas = (pas * 2) - 1;
-    //pas intention : S*rep + (1 - S)*pref // FIXME: it should be L instead of rep
-    // Original way of compute intentions (server) [-2, 2]
-    //intent.pasIntent = (pasSatisfaction * pas) + ((1 - pasSatisfaction) * pref);
-    intent.pasIntent = (pref + pas)/2;
-    if(i == intentions.size() - 1){
-      strLog += "{'neighbor': '" + n.ID.toString() + "', 'interest': '" + 
-          ncd.contentInfo.interest.toString() + "', 'pacInt': " + intent.pacIntent
-        + ", 'pasInt': " + intent.pasIntent + "}], ";
-    }
-    else{
-      strLog += "{'neighbor': '" + n.ID.toString() + "', 'interest': '" + 
-          ncd.contentInfo.interest.toString() + "', 'pacInt': " + intent.pacIntent
-        + ", 'pasInt': " + intent.pasIntent + "}, ";
-    }
-  }
-  Config.logger.updateLogLine(strLog);
-}
 */
-
 void computeIntentions() {
   String tmp1, tmp2, strLog = "'intentions': {";
   Intention intent; Neighbor n;
@@ -497,7 +406,7 @@ public String getLogString(){
 	res += "'pacAd': " + pacAdequation + ", 'pacSat': " + pacSatisfaction 
 	      + ", 'pasAd': " + pasAdequation + ", 'pasSat': " + pasSatisfaction 
 	      + ", 'pacSe': " + pacSysEval + ", 'pasSe': " + pasSysEval
-	      + ", 'dowPi': " + downloadedPieces + ", 'uplPi': " + uploadedPieces;
+	      + ", 'dowPi': " + downloadedItems + ", 'uplPi': " + uploadedItems;
 	return res;
 }
 
