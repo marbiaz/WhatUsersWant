@@ -207,14 +207,15 @@ public String toString() {
 }
 
 private PrefEntry[] getVectorOfPrefs(String entryStr){
+  String pref; float step;
   PrefEntry[] result;
-  String pref;
   PrefEntry item;
   ArrayList<PrefEntry> tmp = new ArrayList<PrefEntry>();
   Scanner decoder = new Scanner(entryStr).useDelimiter("\\[\\]|\\[|\\]|\\,\\s");
   while(decoder.hasNext()){
     pref = decoder.next();
-    item = new PrefEntry(pref, Config.rand.nextInt(11) * 0.1f);
+    step = Config.rand.nextInt(2) == 1 ? 0.1f : -0.1f;
+    item = new PrefEntry(pref, Config.rand.nextInt(11) * step);
     tmp.add(item);
   }
   result = new PrefEntry[tmp.size()];
