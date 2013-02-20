@@ -27,13 +27,15 @@ package wuw.pi.BT;
 public class BtWuwPeer {
 
 private String ipAddress = null;
+private String preferenceStr = null;
 private int wuwPort;
 private int btPort;
 
-public BtWuwPeer(String ipAddr, int wuwPort, int btPort){
+public BtWuwPeer(String ipAddr, int wuwPort, int btPort, String preferenceStr){
   ipAddress = ipAddr;
   this.wuwPort = wuwPort;
   this.btPort = btPort;
+  this.preferenceStr = preferenceStr;
 }
 
 
@@ -66,5 +68,9 @@ public void setBtPort(int btPort) {
   this.btPort = btPort;
 }
 
+
+public String getPreferenceStr() {
+  return preferenceStr;
+}
 
 }
