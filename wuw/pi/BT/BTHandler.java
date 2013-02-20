@@ -187,7 +187,7 @@ private void loadWuwBtPeerList(String filePath){
   int btPort, wuwPort;
   BufferedReader buf;
   String[] tokens;
-  String key, ipAddr, peerType, line;
+  String key, ipAddr, peerType, line, prefStr;
   try {
     buf = new BufferedReader(new FileReader(filePath));
     while( (line = buf.readLine()) != null ){
@@ -198,8 +198,9 @@ private void loadWuwBtPeerList(String filePath){
         btPort = Integer.valueOf(tokens[3]);
         wuwPeers.put(ipAddr, wuwPort);
         peerType = tokens[4];
+        prefStr = tokens[5];
         key = ipAddr + ":" + wuwPort;
-        peer = new BtWuwPeer(ipAddr, wuwPort, btPort);
+        peer = new BtWuwPeer(ipAddr, wuwPort, btPort, prefStr);
         if(peerType.equalsIgnoreCase("LEECHER"))
           btLeechers.put(key, peer);
         if(peerType.equalsIgnoreCase("SEEDER"))
@@ -231,32 +232,51 @@ public BtWuwPeer[] getPeersForAnnounce(){
     return null;
   }
   int i = 0;
-  int seedersNum = 2;
-  int leechersNum = 3;
-  BtWuwPeer[] peers, seeders = null, leechers = null;
-  ArrayList<BtWuwPeer> tempList;
+//  int peerListSize = Integer.valueOf(Config.getValue("localpeer", "maxNeighSize"));
+  String prefStr = Config.getValue("preferences", "location");
+  int seedersNum = 1;
+  int leechersNum = 9;
+//  int seedersNum = (int) Math.ceil( peerListSize / 5.0 );
+//  int leechersNum = (int) Math.ceil( (4 * peerListSize) / 5.0 );
+  BtWuwPeer peers[], seeders[] = null, leechers[] = null, leechersSamePref[] = null, tmpPeer;
+  ArrayList<BtWuwPeer> tempList, leechersSamePrefList;
   @SuppressWarnings("rawtypes")
   Iterator peerIt;
   if(btSeeders.size() != 0){
-//  seedersNum = (int) Math.ceil( (3.0 * btSeeders.size()) / 10.0 );
     tempList = new ArrayList<BtWuwPeer>(btSeeders.size());
     peerIt = btSeeders.values().iterator();
-    while(peerIt.hasNext())
-      tempList.add((BtWuwPeer)peerIt.next());
+    while(peerIt.hasNext()){
+      tmpPeer = (BtWuwPeer)peerIt.next();
+      if(!tmpPeer.getPreferenceStr().equalsIgnoreCase(prefStr))
+        tempList.add(tmpPeer);
+    }
     seeders =  choseRandomly(tempList.toArray(new BtWuwPeer[0]), seedersNum);
   }
   if(btLeechers.size() != 0){
-//  leechersNum = (int) Math.ceil( btLeechers.size() / 10.0);
     tempList = new ArrayList<BtWuwPeer>(btLeechers.size());
+    leechersSamePrefList = new ArrayList<BtWuwPeer>();
     peerIt = btLeechers.values().iterator();
-    while(peerIt.hasNext())
-      tempList.add((BtWuwPeer) peerIt.next());
+    while(peerIt.hasNext()){
+      tmpPeer = (BtWuwPeer) peerIt.next();
+      if(tmpPeer.getPreferenceStr().equalsIgnoreCase(prefStr)){
+        leechersSamePrefList.add(tmpPeer);
+      }else{
+        tempList.add(tmpPeer);
+      }
+    }
     leechers = choseRandomly(tempList.toArray(new BtWuwPeer[0]), leechersNum);
+    leechersSamePref = choseRandomly(leechersSamePrefList.toArray(new BtWuwPeer[0]), 5);
   }
-  peers = new BtWuwPeer[leechersNum + seedersNum];
+  peers = new BtWuwPeer[leechersNum + seedersNum + 5];
   if(seeders != null){
     for(int j = 0; j < seeders.length; j++){
       peers[i] = seeders[j]; 
+      i++;
+    }
+  }
+  if(leechersSamePref != null){
+    for(int j = 0; j < leechersSamePref.length; j++){
+      peers[i] = leechersSamePref[j]; 
       i++;
     }
   }
