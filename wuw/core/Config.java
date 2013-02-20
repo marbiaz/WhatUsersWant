@@ -307,6 +307,7 @@ public static boolean editConfigFile(String xmlFile, String[] args){
     root.getChild("localpeer").getChild("portNumber").setText(args[5]);
     root.getChild("faketracker").getChild("portNumber").setText(args[6]);
     root.getChild("bittorrent").getChild("bitTorrentPort").setText(args[7]);
+    root.getChild("preferences").getChild("location").setText(args[8]);
     XMLOutputter xmlOutput = new XMLOutputter();
     xmlOutput.setFormat(Format.getPrettyFormat());
     xmlOutput.output(conf, new FileWriter(xmlFile));
