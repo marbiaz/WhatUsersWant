@@ -207,21 +207,49 @@ public String toString() {
 }
 
 private PrefEntry[] getVectorOfPrefs(String entryStr){
-  String pref; float step;
+  String pref, prefStr; float prefValue;
   PrefEntry[] result;
   PrefEntry item;
   ArrayList<PrefEntry> tmp = new ArrayList<PrefEntry>();
-  Scanner decoder = new Scanner(entryStr).useDelimiter("\\[\\]|\\[|\\]|\\,\\s");
+  Scanner tplDecoder;
+  Scanner decoder = new Scanner(entryStr).useDelimiter("\\[\\]|\\[\\(|\\)\\]|\\)\\,\\(");
   while(decoder.hasNext()){
     pref = decoder.next();
-    step = Config.rand.nextInt(2) == 1 ? 0.1f : -0.1f;
-    item = new PrefEntry(pref, Config.rand.nextInt(11) * step);
-    tmp.add(item);
+    tplDecoder = new Scanner(pref).useDelimiter("\\,");
+    while(tplDecoder.hasNext()){
+       prefStr = tplDecoder.next();
+       prefValue = Float.valueOf(tplDecoder.next());
+       item = new PrefEntry(prefStr, prefValue);
+       tmp.add(item);
+    }
   }
   result = new PrefEntry[tmp.size()];
   for(int i = 0; i < result.length; i++)
     result[i] = tmp.get(i);
   return result;
 }
+
+/*
+ * Initialization of preferences in a random way.
+ * The input string, given from the XML file, has the next format:
+ * [germany, france, italy, mexico]
+ */
+//private PrefEntry[] getVectorOfPrefs(String entryStr){
+//  String pref; float step;
+//  PrefEntry[] result;
+//  PrefEntry item;
+//  ArrayList<PrefEntry> tmp = new ArrayList<PrefEntry>();
+//  Scanner decoder = new Scanner(entryStr).useDelimiter("\\[\\]|\\[|\\]|\\,\\s");
+//  while(decoder.hasNext()){
+//    pref = decoder.next();
+//    step = Config.rand.nextInt(2) == 1 ? 0.1f : -0.1f;
+//    item = new PrefEntry(pref, Config.rand.nextInt(11) * step);
+//    tmp.add(item);
+//  }
+//  result = new PrefEntry[tmp.size()];
+//  for(int i = 0; i < result.length; i++)
+//    result[i] = tmp.get(i);
+//  return result;
+//}
 
 }
