@@ -244,6 +244,7 @@ void updateFeedback() {
       pacSysEval = 0.0;
     iTracker.clear();
     downloads.clear();
+    // TODO: add current pac feedback to a cumulative running average...
   }
 
   A = 0.0; S = 0.0; s = 0.0; currIndex = 0; countWrong = 0;
@@ -311,7 +312,6 @@ void updateFeedback() {
       A += v;
     }
     A = (A + uploads.size() * 1.0) / (uploads.size() * 2.0);
-    pasAdequation = A;
     pasAdequation = (pasUpdateCounter < (1 / Peer.alpha)) ?
         ((pasAdequation * (pasUpdateCounter - 1)) + A) / pasUpdateCounter
         : ((1 - Peer.alpha) * pasAdequation) + (Peer.alpha * A);
@@ -320,7 +320,6 @@ void updateFeedback() {
         nums = pasSatReminders.remove(iTracker.get(i)); 
         S += (nums[0].doubleValue() + nums[1].intValue() - nums[2].intValue())
             / (2.0 * (nums[1].intValue() - nums[2].intValue()));
-        S += (nums[0].doubleValue() + nums[1].intValue());
       }
       S = S / iTracker.size();
       pasSatisfaction = (pasUpdateCounter < (1 / Peer.alpha)) ?
@@ -337,48 +336,107 @@ void updateFeedback() {
   }
 }
 
-
 /*
- * A quite trivial way to compute intentions.
- * For each neighbor, only the difference between local and remote 
- * peer's expressed interest in the content is taken into account,
- * along with the percentage of successful transactions retrieved 
- * by the latest call to pi.getContentUpdates().
- * The preferences of the users are totally ignored.
-*/
+ * This way of compute intentions takes into account the cosine similarity
+ * considering the exchange of pieces (upload/download)
+ */
 void computeIntentions() {
-  String tmp1, tmp2, strLog = "'intentions': {";
+  String tmp1, strLog = "'intentions': {";
   Intention intent; Neighbor n;
+  Transaction t; Iterator<Transaction> tit;
   NeighborContentData ncd; PreferenceSet neighPrefs;
+  double pas, pac, pref;
   for (int i = 0; i < intentions.size(); i++) {
+    pas = pac = pref = 0.0;
     intent = intentions.get(i);
     n = intent.remote;
     ncd = n.getContent(ID);
     neighPrefs = ncd.contentInfo.preferences;
-    if(neighPrefs != null){
-      intent.pacIntent = computeMappingFunction(neighPrefs);
-      intent.pasIntent = -1;
-    }else{
-      intent.pacIntent = -1;
-      intent.pasIntent = -1;
+    if (neighPrefs != null){
+      pref = computeMappingFunction(neighPrefs);
+    }
+    if (ncd.downloads == null || ncd.downloads.size() == 0) {
+      intent.pacIntent = pref;
+    } else {
+      tit = ncd.downloads.iterator();
+      while (tit.hasNext()) {
+        t = tit.next();
+        if (t.getState() != State.WRONG) {
+          pac++;
+        }
+      }
+      pac = pac / ncd.downloads.size();
+      ncd.downloads.clear();
+      // pac intention : W*pref + (1 - W)*rep
+      // change interval from [0..1] to [-1..1] : (X-A)/(B-A)*(D-C)+C
+      pac = (pac * 2) - 1;
+      intent.pacIntent = (Peer.pref_weight * pref)
+          + ((1 - Peer.pref_weight) * pac);
+    }
+    if (ncd.uploads == null || ncd.uploads.size() == 0) {
+      intent.pasIntent = pref;
+    } else {
+      tit = ncd.uploads.iterator();
+      while (tit.hasNext()) {
+        t = tit.next();
+        if (t.getState() != State.WRONG) {
+          pas++;
+        }
+      }
+      pas = pas / ncd.uploads.size();
+      ncd.uploads.clear();
+      // change interval from [0..1] to [-1..1] : (X-A)/(B-A)*(D-C)+C
+      pas = (pas * 2) - 1;
+      intent.pasIntent = (Peer.pref_weight * pref)
+          + ((1 - Peer.pref_weight) * pas);
     }
     if(i != intentions.size() - 1){
       tmp1 = n.ID != null ? "'" + n.ID.ip.getHostAddress() + "': {" : "'?': {";
       strLog += tmp1;
-//      tmp2 = neighPrefs != null ? neighPrefs.toString() + ", " : "{}, ";
-//      strLog += "'prefs': " + tmp2;
       strLog += "'pacInt': " + intent.pacIntent + ", 'pasInt': " + intent.pasIntent + "}, ";
     }else{
       tmp1 = n.ID != null ? "'" + n.ID.ip.getHostAddress() + "': {" : "'?': {";
       strLog += tmp1;
-//      tmp2 = neighPrefs != null ? neighPrefs.toString() + ", " : "{}, ";
-//      strLog += "'prefs': " + tmp2;
       strLog += "'pacInt': " + intent.pacIntent + ", 'pasInt': " + intent.pasIntent + "}";
     }
   }
   strLog += "}, ";
   Config.logger.updateLogLine(strLog);
 }
+
+/*
+ * This way of compute intentions takes into account the cosine similarity
+ * without considering the exchange of pieces (upload/download)
+ */
+//void computeIntentions() {
+//  String tmp1, strLog = "'intentions': {";
+//  Intention intent; Neighbor n;
+//  NeighborContentData ncd; PreferenceSet neighPrefs;
+//  for (int i = 0; i < intentions.size(); i++) {
+//    intent = intentions.get(i);
+//    n = intent.remote;
+//    ncd = n.getContent(ID);
+//    neighPrefs = ncd.contentInfo.preferences;
+//    if(neighPrefs != null){
+//      intent.pacIntent = computeMappingFunction(neighPrefs);
+//      intent.pasIntent = -1;
+//    }else{
+//      intent.pacIntent = -1;
+//      intent.pasIntent = -1;
+//    }
+//    if(i != intentions.size() - 1){
+//      tmp1 = n.ID != null ? "'" + n.ID.ip.getHostAddress() + "': {" : "'?': {";
+//      strLog += tmp1;
+//      strLog += "'pacInt': " + intent.pacIntent + ", 'pasInt': " + intent.pasIntent + "}, ";
+//    }else{
+//      tmp1 = n.ID != null ? "'" + n.ID.ip.getHostAddress() + "': {" : "'?': {";
+//      strLog += tmp1;
+//      strLog += "'pacInt': " + intent.pacIntent + ", 'pasInt': " + intent.pasIntent + "}";
+//    }
+//  }
+//  strLog += "}, ";
+//  Config.logger.updateLogLine(strLog);
+//}
 
 
 public String toString() {
