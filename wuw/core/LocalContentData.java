@@ -488,7 +488,7 @@ private double computeMappingFunction(PreferenceSet neighPrefs){
       for(int i = 0; i < neighVecPref.length; i++)
         System.out.print(neighVecPref[i].toString() + ", ");
       System.out.println();
-      intention += getCosineSimilatiryMeasure(localVecPref, neighVecPref);
+      intention += getInterestDiff/*getCosineSimilatiryMeasure*/(localVecPref, neighVecPref);
       System.out.println("IntentionSum :: " + intention);
       numEqPrefs++;
     }
@@ -519,6 +519,14 @@ private double getCosineSimilatiryMeasure(PrefEntry[] localVecPref, PrefEntry[] 
   for(i = 0; i < neighVecPref.length; i ++)
     sumSqrNeigh += Math.pow(neighVecPref[i].getValue(), 2);
   return (sum) / ( (Math.sqrt(sumSqrLocal)) * (Math.sqrt(sumSqrNeigh)));
+}
+
+
+private double getInterestDiff(PrefEntry[] localVecPref, PrefEntry[] neighVecPref) {
+  double res = (-1.0) * Math.abs(neighVecPref[0].getValue() - localVecPref[0].getValue());
+  // change interval from [-4..0] to [-1..1] : (X-A)/(B-A)*(D-C)+C
+  res = (res / 2.0) + 1;
+  return res;
 }
 
 }
