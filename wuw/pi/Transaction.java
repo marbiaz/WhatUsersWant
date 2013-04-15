@@ -265,13 +265,19 @@ public String toString() {
 public int compareTo(Transaction t) {
   int res = this.remote.compareTo(t.remote);
   if (res == 0) {
-    res = this.contentID.compareTo(t.contentID);
+    if(t.contentID == null)
+      res = -1;
+    else
+      res = this.contentID.compareTo(t.contentID);
   }
   if (res == 0) {
     res = this.item - t.item;
   }
   if (res == 0) {
-    res = this.state.ordinal() - t.state.ordinal();
+    if(t.state == null)
+      res = -1;
+    else
+      res = this.state.ordinal() - t.state.ordinal();
   }
 //  if (res == 0) { // FIXME: check if this makes sense...
 //    res = (int)(this.endTimestamp - t.endTimestamp);

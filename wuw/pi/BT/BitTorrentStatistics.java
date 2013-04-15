@@ -210,7 +210,7 @@ Transaction[] decodeTransactions(String value, int size, String ip) {
       + "|(\\d)*)\\,\\s)*((\\d)*\\.(\\d)*|\\'[A-Z]*\\'|(\\d)*)\\)\\]";
   if (!value.matches(tranRegExpr)) {
     System.err.println("ERROR :: Set of transactions has not the right format");
-    return null;
+    return new Transaction[0];
   }
   Transaction[] transactions = new Transaction[size];
   int i = 0;
